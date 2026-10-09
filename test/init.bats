@@ -199,6 +199,18 @@ load test_helper
   [ ! -e "$BATS_TEST_TMPDIR/elsewhere/hearth/AGENTS.md" ]
 }
 
+@test "init keys the lab by its name, not by the basename of --at" {
+  lab init hearth --at "$BATS_TEST_TMPDIR/project/lab"
+  h="$BATS_TEST_TMPDIR/project/lab"
+  [ -f "$AGENTS_ROOT/hearth/home/AGENTS.md" ]
+  [ ! -e "$AGENTS_ROOT/lab" ]
+  assert_file_contains "$h/notes/steward.md" "$AGENTS_ROOT/hearth/home/"
+  lab agent add builder --lab "$h" --role implementation --owns src/
+  grep -q $'^builder\t' "$h/roster.tsv"
+  run lab doctor --lab "$h"
+  assert_success
+}
+
 @test "two labs on one machine each keep their own steward" {
   lab init hearth --at "$BATS_TEST_TMPDIR/hearth"
   run lab init hall --at "$BATS_TEST_TMPDIR/hall"

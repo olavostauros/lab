@@ -90,7 +90,9 @@ lab_root() {
 }
 
 lab_name() {
-  basename "$1"
+  local name
+  name="$(sed -n 's/^LAB_NAME = "\(.*\)"$/\1/p' "$1/mise.toml" 2>/dev/null | head -1)"
+  printf '%s\n' "${name:-$(basename "$1")}"
 }
 
 lab_project() {
