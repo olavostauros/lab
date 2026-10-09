@@ -71,4 +71,7 @@ or signing key, no mail, no chat, no CI wake-ups.
 
 None is filed: the owner files the ones this lab wants in
 `notes/lab-backlog.md`, one at a time, and each becomes a dated
-widening in `AGENTS.md` when it is granted.
+widening in `AGENTS.md` when it is granted. A granted account is that row
+plus two files under the agent's workspace, `~/agents/<name>/.secrets/`:
+an age identity and a `secrets` sops vault, which `mise run agent-env
+<name>` then exports and `mise run welcome` reports under `credentials:`.

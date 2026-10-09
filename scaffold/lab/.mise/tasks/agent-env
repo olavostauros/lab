@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#MISE description="Print the exports that activate a lab agent's git identity; eval the output"
+#MISE description="Print the exports that activate a lab agent's identity; eval the output"
 #USAGE arg "<name>" help="Agent name, as on roster.tsv"
 set -eo pipefail
 
@@ -15,3 +15,17 @@ printf 'export GIT_AUTHOR_NAME=%q\n' "$name"
 printf 'export GIT_AUTHOR_EMAIL=%q\n' "$name@$LAB_AUTHOR_DOMAIN"
 printf 'export GIT_COMMITTER_NAME=%q\n' "$name"
 printf 'export GIT_COMMITTER_EMAIL=%q\n' "$name@$LAB_AUTHOR_DOMAIN"
+
+[ "$name" != steward ] || exit 0
+secrets_dir="${LAB_AGENTS_ROOT:-$HOME/agents}/$name/.secrets"
+identity="$secrets_dir/identity.txt"
+[ -f "$identity" ] || exit 0
+recipient="$(awk '/^# public key: / { print $4; exit }' "$identity")"
+if [ -z "$recipient" ]; then
+  echo "$identity has no '# public key:' line; the owner mints identities with age-keygen, which writes one" >&2
+  exit 1
+fi
+printf 'export SECRETS_PROVIDER=sops\n'
+printf 'export SECRETS_SOPS_FILE=%q\n' "$secrets_dir/vault.enc.yaml"
+printf 'export SECRETS_SOPS_AGE_KEY_FILE=%q\n' "$identity"
+printf 'export SECRETS_SOPS_RECIPIENT=%q\n' "$recipient"

@@ -24,8 +24,9 @@ You are **{{AGENT}}**, the {{ROLE}} agent of **{{PROJECT}}**. You own
 1. Confirm identity: `echo $GIT_AUTHOR_NAME` must print `{{AGENT}}`. If not:
    `cd {{LAB_PATH}} && eval "$(mise run -q agent-env {{AGENT}})"` — in the
    same shell you will commit from. Every command may run in a fresh
-   shell, so re-run it before each commit. `agent-env` sets the author
-   only: if the machine signs commits, yours is signed with the owner's
+   shell, so re-run it before each commit. `agent-env` sets the author,
+   and the credential path if the owner has granted you an account, not
+   a signing key: if the machine signs, yours is signed with the owner's
    key, and a commit that stalls on its passphrase prompt is reported, not
    worked around — never turn signing off, never set
    `{{LAB_UPPER}}_OWNER_COMMIT`.

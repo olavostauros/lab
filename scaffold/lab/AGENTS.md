@@ -205,6 +205,11 @@ the only place the list is enumerated** — no agent definition, home
 says "three" while the table says four hides a grant; one that summarises the
 list too narrowly revokes one. Both fail silently. Link here instead.
 
+A row that grants an account names the agent, the login and the date —
+"`vulcan` as `vulcan-acme` on GitHub, 2026-03-01" — and the files under the
+agent's workspace carry the credential itself, never the row (see
+"Tooling", `gh`).
+
 Until a row exists, each agent's standing permission is exactly Tier 1:
 branch, commit, push the branch, open the PR. Merging into `main` is the
 owner's.
@@ -228,6 +233,9 @@ Each agent gets `~/agents/<name>/` for hands-on work; the private home repo
 lives at `~/agents/<name>/home/`. The steward is the lab speaking, so
 its workspace is the lab's own: `~/agents/{{LAB_NAME}}/`. The
 `{{WORK_PATH}}` checkout is shared, not per-agent — see "Architecture" above.
+A credential the owner has granted lives at `~/agents/<name>/.secrets/`,
+beside the home and never inside it: a repo is one careless `git add` from
+publishing a key.
 
 ## Communication
 
@@ -255,6 +263,22 @@ its workspace is the lab's own: `~/agents/{{LAB_NAME}}/`. The
   identity of its own; every push and PR goes through the owner's
   credentials and says so in the PR body. Whether the builders and judges
   get accounts of their own is the owner's to file in [[lab-backlog]].
+  A grant, when made, is four things in the owner's own turn: a dated row
+  in the loosenings table; the "Identity, as of" section of
+  `notes/<name>.md`; `sops` pinned under `[tools]` in `mise.toml`; and two
+  files under the agent's workspace, `~/agents/<name>/.secrets/identity.txt`
+  (an age identity, minted by the owner with `age-keygen`) and
+  `~/agents/<name>/.secrets/vault.enc.yaml` (a `secrets` sops vault holding
+  `<name>/github-pat`, `<name>/github-username`, and whatever else the grant
+  covers). Once the identity file exists, `agent-env <name>` also exports
+  the `secrets` sops configuration — provider, vault, identity, recipient —
+  as facts read from the files; nothing is chosen or asked, and a fresh
+  lab prints the four author lines and no more. That export wins over a
+  machine-wide `SECRETS_PROVIDER` in the shell it activates. A desktop
+  keyring — the `keychain` provider, gnome-keyring, libsecret — is refused
+  as a backend: a lab never depends on one. `1password` is the owner's
+  own setting on the machine and `env` is a runner's; with the same
+  `<name>/<key>` names, neither needs anything from the lab.
   The steward is excluded from any such entry and from every channel:
   no account, no key, no mailbox, ever. It reads GitHub through the owner's
   login and writes nothing there.

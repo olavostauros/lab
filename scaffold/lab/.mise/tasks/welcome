@@ -8,6 +8,15 @@ on_roster() {
   awk -F '\t' -v n="$1" '!/^#/ && $1 == n { found = 1 } END { exit !found }' "$roster"
 }
 
+credentials() {
+  local dir="${LAB_AGENTS_ROOT:-$HOME/agents}/$1/.secrets"
+  if [ -f "$dir/identity.txt" ]; then
+    echo "credentials: sops vault at ${dir/#"$HOME"/\~}"
+  else
+    echo "credentials: none"
+  fi
+}
+
 echo "== identity =="
 author="${GIT_AUTHOR_NAME:-unset}"
 echo "GIT_AUTHOR_NAME: $author"
@@ -15,8 +24,10 @@ if [ "$author" = unset ]; then
   echo "not activated — ask the owner which agent you are, then: eval \"\$(mise run -q agent-env <name>)\""
 elif [ "$author" = steward ]; then
   echo "home: ~/agents/$LAB_NAME/home/AGENTS.md (the lab's own; you are its voice)"
+  credentials "$LAB_NAME"
 elif on_roster "$author"; then
   echo "home: ~/agents/$author/home/AGENTS.md"
+  credentials "$author"
 else
   echo "not a lab agent; owner commits need {{LAB_UPPER}}_OWNER_COMMIT=1"
 fi
