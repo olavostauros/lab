@@ -2,6 +2,6 @@
 #MISE description="Print the framework version: the tag at HEAD, else the short commit, else unknown"
 set -euo pipefail
 
-source "$MISE_CONFIG_ROOT/lib/house.sh"
+source "$MISE_CONFIG_ROOT/lib/lab.sh"
 
 framework_version

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-#MISE description="Print the exports that activate a household agent's git identity; eval the output"
+#MISE description="Print the exports that activate a lab agent's git identity; eval the output"
 #USAGE arg "<name>" help="Agent name, as on roster.tsv"
 set -eo pipefail
 
 name="${usage_name:?agent name required}"
-roster="$HOUSE_DIR/roster.tsv"
+roster="$LAB_DIR/roster.tsv"
 
 if ! awk -F '\t' -v n="$name" '!/^#/ && $1 == n { found = 1 } END { exit !found }' "$roster"; then
   echo "unknown agent: $name (see $roster)" >&2
@@ -12,6 +12,6 @@ if ! awk -F '\t' -v n="$name" '!/^#/ && $1 == n { found = 1 } END { exit !found 
 fi
 
 printf 'export GIT_AUTHOR_NAME=%q\n' "$name"
-printf 'export GIT_AUTHOR_EMAIL=%q\n' "$name@$HOUSE_AUTHOR_DOMAIN"
+printf 'export GIT_AUTHOR_EMAIL=%q\n' "$name@$LAB_AUTHOR_DOMAIN"
 printf 'export GIT_COMMITTER_NAME=%q\n' "$name"
-printf 'export GIT_COMMITTER_EMAIL=%q\n' "$name@$HOUSE_AUTHOR_DOMAIN"
+printf 'export GIT_COMMITTER_EMAIL=%q\n' "$name@$LAB_AUTHOR_DOMAIN"

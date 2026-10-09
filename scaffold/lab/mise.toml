@@ -1,9 +1,9 @@
 [env]
-HOUSE_NAME = "{{HOUSE_NAME}}"
-HOUSE_PROJECT = "{{PROJECT}}"
-HOUSE_DIR = "{{ config_root }}"
+LAB_NAME = "{{LAB_NAME}}"
+LAB_PROJECT = "{{PROJECT}}"
+LAB_DIR = "{{ config_root }}"
 WORK_DIR = "{{WORK_DIR_EXPR}}"
-HOUSE_AUTHOR_DOMAIN = "{{AUTHOR_DOMAIN}}"
+LAB_AUTHOR_DOMAIN = "{{AUTHOR_DOMAIN}}"
 
 [settings]
 experimental = true

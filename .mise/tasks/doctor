@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-#MISE description="Check a house against the framework's invariants"
-#USAGE flag "--house <path>" help="The house directory; defaults to the current directory"
+#MISE description="Check a lab against the framework's invariants"
+#USAGE flag "--lab <path>" help="The lab directory; defaults to the current directory"
 set -euo pipefail
 
-source "$MISE_CONFIG_ROOT/lib/house.sh"
+source "$MISE_CONFIG_ROOT/lib/lab.sh"
 
-HOUSE="$(house_root "${usage_house:-.}")"
-WORK="$(house_work_dir "$HOUSE")"
+LAB="$(lab_root "${usage_lab:-.}")"
+WORK="$(lab_work_dir "$LAB")"
 FAILS=0
 
 ok()   { say "ok:   $*"; }
@@ -14,23 +14,23 @@ warn() { say "warn: $*"; }
 fail() { say "fail: $*"; FAILS=$((FAILS + 1)); }
 note() { say "note: $*"; }
 
-say "house: $(display_path "$HOUSE")"
+say "lab: $(display_path "$LAB")"
 say "work:  $(display_path "$WORK")"
 say ""
 
 version="$(bash_version)"
-if version_at_least "$version" 4; then ok "bash $version"; else fail "bash $version: house needs bash 4 or newer first on PATH"; fi
+if version_at_least "$version" 4; then ok "bash $version"; else fail "bash $version: lab needs bash 4 or newer first on PATH"; fi
 version="$(git_version)"
-if version_at_least "$version" 2.28; then ok "git $version"; else fail "git $version: house init needs git 2.28 or newer for git init -b"; fi
+if version_at_least "$version" 2.28; then ok "git $version"; else fail "git $version: lab init needs git 2.28 or newer for git init -b"; fi
 for key in name email; do
-  if git_identity "$WORK" "$key"; then ok "git user.$key"; else fail "git user.$key is unset, so house init cannot commit → git config --global user.$key '…'"; fi
+  if git_identity "$WORK" "$key"; then ok "git user.$key"; else fail "git user.$key is unset, so lab init cannot commit → git config --global user.$key '…'"; fi
 done
-if command -v mise >/dev/null 2>&1; then ok "mise on PATH"; else fail "mise is not on PATH, and every house command runs through it → put the directory holding mise on PATH"; fi
-if [ -n "${HOUSE_CALLER_PWD:-}" ]; then
-  if command -v jq >/dev/null 2>&1; then ok "jq on PATH"; else warn "jq is not on PATH: without it the house shim runs 'house agent add' as 'mise run agent add' → install jq"; fi
+if command -v mise >/dev/null 2>&1; then ok "mise on PATH"; else fail "mise is not on PATH, and every lab command runs through it → put the directory holding mise on PATH"; fi
+if [ -n "${LAB_CALLER_PWD:-}" ]; then
+  if command -v jq >/dev/null 2>&1; then ok "jq on PATH"; else warn "jq is not on PATH: without it the lab shim runs 'lab agent add' as 'mise run agent add' → install jq"; fi
 fi
 if on_path "$HOME/.local/bin"; then ok "$(display_path "$HOME/.local/bin") on PATH"; else warn "$(display_path "$HOME/.local/bin") is not on PATH, and shiv and mise install there → export PATH=\"\$HOME/.local/bin:\$PATH\""; fi
-recorded="$(house_framework_version "$HOUSE")"
+recorded="$(lab_framework_version "$LAB")"
 running="$(framework_version)"
 if [ -z "$recorded" ]; then note "framework: the README records no framework version (this tool is $running)"
 elif [ "$recorded" = "$running" ]; then ok "framework: made at $recorded, this tool's version"
@@ -38,21 +38,21 @@ else note "framework: made at $recorded; this tool is $running"
 fi
 say ""
 
-for f in AGENTS.md README.md mise.toml roster.tsv notes/work-queue.md notes/household-backlog.md \
+for f in AGENTS.md README.md mise.toml roster.tsv notes/work-queue.md notes/lab-backlog.md \
          hooks/agent-identity .mise/tasks/welcome .mise/tasks/test .mise/tasks/agent-env .mise/tasks/install-hooks; do
-  if [ -f "$HOUSE/$f" ]; then ok "$f"; else fail "$f missing"; fi
+  if [ -f "$LAB/$f" ]; then ok "$f"; else fail "$f missing"; fi
 done
 
 for f in hooks/agent-identity .mise/tasks/welcome .mise/tasks/test .mise/tasks/agent-env .mise/tasks/install-hooks; do
-  [ -f "$HOUSE/$f" ] && [ ! -x "$HOUSE/$f" ] && fail "$f is not executable"
+  [ -f "$LAB/$f" ] && [ ! -x "$LAB/$f" ] && fail "$f is not executable"
 done
 
-for marker in "<!-- house:roster -->" "<!-- house:read-first -->"; do
-  if grep -qxF "$marker" "$HOUSE/AGENTS.md" 2>/dev/null; then ok "marker $marker"; else fail "AGENTS.md lacks marker $marker"; fi
+for marker in "<!-- lab:roster -->" "<!-- lab:read-first -->"; do
+  if grep -qxF "$marker" "$LAB/AGENTS.md" 2>/dev/null; then ok "marker $marker"; else fail "AGENTS.md lacks marker $marker"; fi
 done
 
 for heading in "### The tiers — canonical list" "### The loosenings — canonical list" "#### The two-key rule"; do
-  if grep -qxF "$heading" "$HOUSE/AGENTS.md" 2>/dev/null; then ok "section $heading"; else fail "AGENTS.md lacks section: $heading"; fi
+  if grep -qxF "$heading" "$LAB/AGENTS.md" 2>/dev/null; then ok "section $heading"; else fail "AGENTS.md lacks section: $heading"; fi
 done
 
 hook_target="$(git -C "$WORK" rev-parse --git-path hooks/pre-commit 2>/dev/null || true)"
@@ -70,24 +70,24 @@ keepers=0
 homes=()
 while IFS= read -r agent; do
   count=$((count + 1))
-  kind="$(roster_kind "$HOUSE" "$agent")"
-  home="$(agent_workspace "$HOUSE" "$agent" "$kind")/home"
-  if [ "$kind" = housekeeper ]; then
+  kind="$(roster_kind "$LAB" "$agent")"
+  home="$(agent_workspace "$LAB" "$agent" "$kind")/home"
+  if [ "$kind" = steward ]; then
     keepers=$((keepers + 1))
-    [ "$agent" = "$HOUSEKEEPER" ] || fail "$agent: a housekeeper must be named $HOUSEKEEPER"
+    [ "$agent" = "$STEWARD" ] || fail "$agent: a steward must be named $STEWARD"
   fi
-  if [ -f "$HOUSE/notes/$agent.md" ]; then ok "$agent: notes/$agent.md"; else fail "$agent: notes/$agent.md missing"; fi
-  if grep -q "^- \*\*$agent\*\* — " "$HOUSE/AGENTS.md"; then ok "$agent: on the roster in AGENTS.md"; else fail "$agent: not listed under 'Who lives here' in AGENTS.md"; fi
+  if [ -f "$LAB/notes/$agent.md" ]; then ok "$agent: notes/$agent.md"; else fail "$agent: notes/$agent.md missing"; fi
+  if grep -q "^- \*\*$agent\*\* — " "$LAB/AGENTS.md"; then ok "$agent: on the roster in AGENTS.md"; else fail "$agent: not listed under 'Who lives here' in AGENTS.md"; fi
   if [ -f "$home/AGENTS.md" ]; then ok "$agent: home at $(display_path "$home")"; homes+=("$home"); else warn "$agent: no home at $(display_path "$home")"; fi
-done < <(roster_agents "$HOUSE")
-[ "$count" -gt 0 ] || warn "roster is empty → house agent add <name> --role <role>"
-[ "$keepers" -le 1 ] || fail "roster lists $keepers housekeepers; a house has exactly one"
-[ "$keepers" -eq 1 ] || warn "no housekeeper → house agent add $HOUSEKEEPER"
+done < <(roster_agents "$LAB")
+[ "$count" -gt 0 ] || warn "roster is empty → lab agent add <name> --role <role>"
+[ "$keepers" -le 1 ] || fail "roster lists $keepers stewards; a lab has exactly one"
+[ "$keepers" -eq 1 ] || warn "no steward → lab agent add $STEWARD"
 
 say ""
 leftovers=0
 hits() {
-  grep -rn "$@" --exclude-dir=.git -- "$HOUSE" "${homes[@]}" 2>/dev/null || true
+  grep -rn "$@" --exclude-dir=.git -- "$LAB" "${homes[@]}" 2>/dev/null || true
 }
 report() {
   local kind="$1" line file rest
@@ -95,13 +95,13 @@ report() {
     [ -n "$line" ] || continue
     file="${line%%:*}"
     rest="${line#*:}"
-    case "$file" in "$HOUSE"/*) file="${file#"$HOUSE"/}" ;; *) file="$(display_path "$file")" ;; esac
+    case "$file" in "$LAB"/*) file="${file#"$LAB"/}" ;; *) file="$(display_path "$file")" ;; esac
     fail "$kind: $file:$rest"
     leftovers=$((leftovers + 1))
   done
 }
 report placeholder < <(hits -oE '\{\{[A-Z_]+\}\}')
-lineage="$(lineage_names "$HOUSE" | paste -sd '|')"
+lineage="$(lineage_names "$LAB" | paste -sd '|')"
 report lineage < <(hits -iwE "$lineage")
 report lineage < <(hits -iwE 'KnickKnackLabs|Knick Knack Labs' --exclude=mise.toml)
 if [ "$leftovers" -eq 0 ]; then

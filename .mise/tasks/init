@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
-#MISE description="Scaffold a household: contract, roster, queue, style, guard, housekeeper and tasks"
-#USAGE arg "<name>" help="Household name, lowercase (for example: example)"
+#MISE description="Scaffold a lab: contract, roster, queue, style, guard, steward and tasks"
+#USAGE arg "<name>" help="Lab name, lowercase (for example: example)"
 #USAGE flag "--at <path>" help="Where to create it; defaults to ./<name>"
-#USAGE flag "--embedded" help="The house is a directory inside an existing project repo, not a repo of its own"
-#USAGE flag "--project <project>" help="What the household works on; defaults to the parent repo's name when embedded, else the house name"
+#USAGE flag "--embedded" help="The lab is a directory inside an existing project repo, not a repo of its own"
+#USAGE flag "--project <project>" help="What the lab works on; defaults to the parent repo's name when embedded, else the lab name"
 #USAGE flag "--owner <owner>" help="The owner's name as it appears in the contract; defaults to git user.name, and is required when that is unset"
 #USAGE flag "--no-commit" help="Leave the generated files uncommitted"
-#USAGE example "house init example --at ~/project/example --embedded" header="A house inside the project it works on"
-#USAGE example "house init example --at ~/example --owner 'Your Name'" header="A standalone house that works on other repos"
+#USAGE example "lab init example --at ~/project/example --embedded" header="A lab inside the project it works on"
+#USAGE example "lab init example --at ~/example --owner 'Your Name'" header="A standalone lab that works on other repos"
 set -euo pipefail
 
-source "$MISE_CONFIG_ROOT/lib/house.sh"
+source "$MISE_CONFIG_ROOT/lib/lab.sh"
 
-NAME="${usage_name:?a house name is required}"
-validate_name "house name" "$NAME"
+NAME="${usage_name:?a lab name is required}"
+validate_name "lab name" "$NAME"
 UPPER="$(upper_env "$NAME")"
 EMBEDDED="${usage_embedded:-false}"
-AGENTS_ROOT="${HOUSE_AGENTS_ROOT:-$HOME/agents}"
+AGENTS_ROOT="${LAB_AGENTS_ROOT:-$HOME/agents}"
 
 OWNER="${usage_owner:-$(git config user.name 2>/dev/null || true)}"
 [ -n "$OWNER" ] || die "the owner has no name: pass --owner '<name>', or set git config user.name"
@@ -32,21 +32,21 @@ if [ "$EMBEDDED" = "true" ]; then
   [ -n "$WORK" ] || die "--embedded needs the parent of $TARGET to be inside a git repository"
   PROJECT="${usage_project:-$(basename "$WORK")}"
   WORK_DIR_EXPR='{{ config_root }}/..'
-  PLACEMENT="This household lives **inside** the project it works on: \`$(display_path "$TARGET")\` is a directory of the \`$PROJECT\` repo, not a repo of its own. Home and work share one git history, so the rules below bind both."
+  PLACEMENT="This lab lives **inside** the project it works on: \`$(display_path "$TARGET")\` is a directory of the \`$PROJECT\` repo, not a repo of its own. Home and work share one git history, so the rules below bind both."
 else
   WORK="$TARGET"
   PROJECT="${usage_project:-$NAME}"
   WORK_DIR_EXPR='{{ config_root }}'
-  PLACEMENT="This household is a repository of its own. The work happens in other repositories, cloned into each agent's workspace; the household is where the rules, the queue and the record of that work are kept."
+  PLACEMENT="This lab is a repository of its own. The work happens in other repositories, cloned into each agent's workspace; the lab is where the rules, the queue and the record of that work are kept."
 fi
 
 taken="$AGENTS_ROOT/$NAME/home/AGENTS.md"
-[ ! -e "$taken" ] || die "$(display_path "$taken") already exists — a house named $NAME already keeps its housekeeper there. Pick another name"
+[ ! -e "$taken" ] || die "$(display_path "$taken") already exists — a lab named $NAME already keeps its steward there. Pick another name"
 
 VARS=(
-  "HOUSE_NAME=$NAME"
-  "HOUSE_UPPER=$UPPER"
-  "HOUSE_PATH=$(display_path "$TARGET")"
+  "LAB_NAME=$NAME"
+  "LAB_UPPER=$UPPER"
+  "LAB_PATH=$(display_path "$TARGET")"
   "WORK_PATH=$(display_path "$WORK")"
   "WORK_DIR_EXPR=$WORK_DIR_EXPR"
   "PROJECT=$PROJECT"
@@ -66,11 +66,11 @@ fi
 
 PREEXISTING="$(git -C "$WORK" status --porcelain -- "$TARGET" 2>/dev/null || true)"
 
-install_tree "$HOUSE_SCAFFOLD/house" "$TARGET" "${VARS[@]}"
+install_tree "$LAB_SCAFFOLD/lab" "$TARGET" "${VARS[@]}"
 
 mise trust "$TARGET/mise.toml" >/dev/null
 
-add_agent "$TARGET" "$HOUSEKEEPER" housekeeping "" ""
+add_agent "$TARGET" "$STEWARD" stewardship "" ""
 
 if [ "${usage_no_commit:-false}" = "true" ]; then
   say "skip: initial commit (--no-commit)"
@@ -79,13 +79,13 @@ elif [ "$NEW_REPO" = "true" ] && [ -z "$PREEXISTING" ]; then
     say "sign: the bootstrap commit is signed ($signing); a passphrase prompt that appears now is for it. --no-commit leaves the files for the owner to commit instead"
   fi
   git -C "$TARGET" add .
-  env "${UPPER}_OWNER_COMMIT=1" git -C "$TARGET" commit -q -m "$NAME: bootstrap the household from house"
-  say "commit: bootstrap the household"
+  env "${UPPER}_OWNER_COMMIT=1" git -C "$TARGET" commit -q -m "$NAME: bootstrap the lab from lab"
+  say "commit: bootstrap the lab"
 else
   say "next: review the new files under $(display_path "$TARGET") and commit them as the owner"
 fi
 
 say ""
 say "done: $NAME at $(display_path "$TARGET") (work tree: $(display_path "$WORK"))"
-say "next: house agent add <name> --house $(display_path "$TARGET") --role '<role>' [--owns <dir>/]"
+say "next: lab agent add <name> --lab $(display_path "$TARGET") --role '<role>' [--owns <dir>/]"
 say "next: cd $(display_path "$TARGET") && mise run install-hooks && mise run welcome"

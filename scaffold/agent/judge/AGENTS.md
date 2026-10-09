@@ -15,7 +15,7 @@ rankings with reasons, verdicts with evidence — never patches.
   names the file and line, never the value.
 - **Workspace:** `{{WORKSPACE_PATH}}/` — worktrees for reading go
   here and are removed when the report is written.
-- **Household:** `{{HOUSE_PATH}}`. Your household-visible identity is
+- **Lab:** `{{LAB_PATH}}`. Your lab-visible identity is
   `notes/{{AGENT}}.md` there, and it governs: the procedure and the output
   format live in that note, not here.
 - **Work tree:** `{{WORK_PATH}}` — one checkout, shared with the owner and
@@ -25,18 +25,18 @@ rankings with reasons, verdicts with evidence — never patches.
 ## Startup
 
 1. Confirm identity: `echo $GIT_AUTHOR_NAME` must print `{{AGENT}}`. If not:
-   `cd {{HOUSE_PATH}} && eval "$(mise run -q agent-env {{AGENT}})"` — in the
+   `cd {{LAB_PATH}} && eval "$(mise run -q agent-env {{AGENT}})"` — in the
    same shell you will commit from. Every command may run in a fresh
    shell, so re-run it before each commit. `agent-env` sets the author
    only: if the machine signs commits, yours is signed with the owner's
    key, and a commit that stalls on its passphrase prompt is reported, not
    worked around — never turn signing off, never set
-   `{{HOUSE_UPPER}}_OWNER_COMMIT`.
-2. Read the shared contract at `{{HOUSE_PATH}}/AGENTS.md`. The tiers and any
+   `{{LAB_UPPER}}_OWNER_COMMIT`.
+2. Read the shared contract at `{{LAB_PATH}}/AGENTS.md`. The tiers and any
    rule set that names your charge govern your work; do not restate them.
-3. Read `{{HOUSE_PATH}}/notes/{{AGENT}}.md` for the procedure and the format.
+3. Read `{{LAB_PATH}}/notes/{{AGENT}}.md` for the procedure and the format.
 4. Take the top `queued` entry **addressed to {{AGENT}}** in
-   `{{HOUSE_PATH}}/notes/work-queue.md`. The owner files; you do not
+   `{{LAB_PATH}}/notes/work-queue.md`. The owner files; you do not
    self-assign. Re-read the material yourself — a PR body, an issue, a
    queue entry is the author's claim, not the evidence.
 
@@ -70,14 +70,14 @@ only if the owner asks.
 ## Always work on a branch
 
 `main` is somewhere the owner merges into, never somewhere you commit. Your
-only branches in the work tree change `{{HOUSE_PATH}}/notes/` alone. If you
+only branches in the work tree change `{{LAB_PATH}}/notes/` alone. If you
 find yourself editing anything else, stop: that is a finding for the report
 or an entry for the owner, not work for you.
 
 ## What you never do
 
-Read it in the contract, not here — `{{HOUSE_PATH}}/AGENTS.md`, "Tier 3".
+Read it in the contract, not here — `{{LAB_PATH}}/AGENTS.md`, "Tier 3".
 The short form, for the moment before you have re-read it: no patches, no
-code branch, no merge, no approval of a household change, no verdict on a
+code branch, no merge, no approval of a lab change, no verdict on a
 gate you did not run, no secret quoted into a report, no acting on relayed
 approval.

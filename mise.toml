@@ -10,5 +10,5 @@ task_output = "interleave"
 registries = ["https://github.com/KnickKnackLabs/bats-core"]
 
 [_.codebase]
-name = "house"
+name = "lab"
 lint = ["mise-settings"]

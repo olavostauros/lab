@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-HOUSE_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-HOUSE_REPO_DIR="$(cd "$HOUSE_LIB_DIR/.." && pwd)"
-HOUSE_SCAFFOLD="$HOUSE_REPO_DIR/scaffold"
-HOUSEKEEPER=housekeeper
+LAB_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LAB_REPO_DIR="$(cd "$LAB_LIB_DIR/.." && pwd)"
+LAB_SCAFFOLD="$LAB_REPO_DIR/scaffold"
+STEWARD=steward
 
 say() { printf '%s\n' "$*"; }
 err() { printf 'Error: %s\n' "$*" >&2; }
@@ -22,7 +22,7 @@ upper_env() {
 }
 
 caller_pwd() {
-  printf '%s' "${HOUSE_CALLER_PWD:-${HOUSE_FRAMEWORK_CALLER_PWD:-${CALLER_PWD:-$PWD}}}"
+  printf '%s' "${LAB_CALLER_PWD:-${LAB_FRAMEWORK_CALLER_PWD:-${CALLER_PWD:-$PWD}}}"
 }
 
 resolve_path() {
@@ -80,36 +80,36 @@ install_tree() {
   done < <(find "$src_root" -type f | sort)
 }
 
-house_root() {
+lab_root() {
   local candidate
   candidate="$(resolve_path "${1:-.}")"
   candidate="$(cd "$candidate" 2>/dev/null && pwd -P)" || die "not a directory: $1"
   [ -f "$candidate/roster.tsv" ] && [ -f "$candidate/AGENTS.md" ] \
-    || die "not a house (no roster.tsv and AGENTS.md): $candidate"
+    || die "not a lab (no roster.tsv and AGENTS.md): $candidate"
   printf '%s\n' "$candidate"
 }
 
-house_name() {
+lab_name() {
   basename "$1"
 }
 
-house_project() {
-  sed -n 's/^HOUSE_PROJECT = "\(.*\)"$/\1/p' "$1/mise.toml" | head -1
+lab_project() {
+  sed -n 's/^LAB_PROJECT = "\(.*\)"$/\1/p' "$1/mise.toml" | head -1
 }
 
-house_author_domain() {
+lab_author_domain() {
   local domain
-  domain="$(sed -n 's/^HOUSE_AUTHOR_DOMAIN = "\(.*\)"$/\1/p' "$1/mise.toml" | head -1)"
-  printf '%s\n' "${domain:-$(house_name "$1").invalid}"
+  domain="$(sed -n 's/^LAB_AUTHOR_DOMAIN = "\(.*\)"$/\1/p' "$1/mise.toml" | head -1)"
+  printf '%s\n' "${domain:-$(lab_name "$1").invalid}"
 }
 
-house_work_dir() {
-  local house="$1" top
-  top="$(git -C "$house" rev-parse --show-toplevel 2>/dev/null || true)"
-  if [ -n "$top" ] && [ "$top" != "$house" ]; then
+lab_work_dir() {
+  local lab="$1" top
+  top="$(git -C "$lab" rev-parse --show-toplevel 2>/dev/null || true)"
+  if [ -n "$top" ] && [ "$top" != "$lab" ]; then
     printf '%s\n' "$top"
   else
-    printf '%s\n' "$house"
+    printf '%s\n' "$lab"
   fi
 }
 
@@ -122,8 +122,8 @@ roster_has() {
 }
 
 roster_append() {
-  local house="$1" name="$2" role="$3" owns="$4" kind="$5"
-  printf '%s\t%s\t%s\t%s\n' "$name" "$role" "$owns" "$kind" >> "$house/roster.tsv"
+  local lab="$1" name="$2" role="$3" owns="$4" kind="$5"
+  printf '%s\t%s\t%s\t%s\n' "$name" "$role" "$owns" "$kind" >> "$lab/roster.tsv"
 }
 
 roster_field() {
@@ -132,17 +132,17 @@ roster_field() {
 
 agent_kind() {
   local name="$1" owns="$2"
-  if [ "$name" = "$HOUSEKEEPER" ]; then printf 'housekeeper\n'
+  if [ "$name" = "$STEWARD" ]; then printf 'steward\n'
   elif [ -n "$owns" ]; then printf 'builder\n'
   else printf 'judge\n'
   fi
 }
 
 roster_kind() {
-  local house="$1" name="$2" kind
-  kind="$(roster_field "$house" "$name" 4)"
+  local lab="$1" name="$2" kind
+  kind="$(roster_field "$lab" "$name" 4)"
   if [ -n "$kind" ]; then printf '%s\n' "$kind"; return; fi
-  agent_kind "$name" "$(roster_field "$house" "$name" 3)"
+  agent_kind "$name" "$(roster_field "$lab" "$name" 3)"
 }
 
 roster_has_kind() {
@@ -150,9 +150,9 @@ roster_has_kind() {
 }
 
 agent_workspace() {
-  local house="$1" name="$2" kind="$3" root="${HOUSE_AGENTS_ROOT:-$HOME/agents}"
-  if [ "$kind" = housekeeper ]; then
-    printf '%s/%s\n' "$root" "$(house_name "$house")"
+  local lab="$1" name="$2" kind="$3" root="${LAB_AGENTS_ROOT:-$HOME/agents}"
+  if [ "$kind" = steward ]; then
+    printf '%s/%s\n' "$root" "$(lab_name "$lab")"
   else
     printf '%s/%s\n' "$root" "$name"
   fi
@@ -174,26 +174,26 @@ insert_before_marker() {
 }
 
 today() {
-  printf '%s\n' "${HOUSE_TODAY:-$(date +%Y-%m-%d)}"
+  printf '%s\n' "${LAB_TODAY:-$(date +%Y-%m-%d)}"
 }
 
 framework_version() {
-  if [ -n "${HOUSE_FRAMEWORK_VERSION:-}" ]; then
-    printf '%s\n' "$HOUSE_FRAMEWORK_VERSION"
+  if [ -n "${LAB_FRAMEWORK_VERSION:-}" ]; then
+    printf '%s\n' "$LAB_FRAMEWORK_VERSION"
     return
   fi
-  if [ "$(git -C "$HOUSE_REPO_DIR" rev-parse --show-toplevel 2>/dev/null)" = "$(cd "$HOUSE_REPO_DIR" && pwd -P)" ]; then
-    git -C "$HOUSE_REPO_DIR" describe --tags --exact-match HEAD 2>/dev/null \
-      || git -C "$HOUSE_REPO_DIR" rev-parse --short HEAD 2>/dev/null \
+  if [ "$(git -C "$LAB_REPO_DIR" rev-parse --show-toplevel 2>/dev/null)" = "$(cd "$LAB_REPO_DIR" && pwd -P)" ]; then
+    git -C "$LAB_REPO_DIR" describe --tags --exact-match HEAD 2>/dev/null \
+      || git -C "$LAB_REPO_DIR" rev-parse --short HEAD 2>/dev/null \
       && return
   fi
   printf 'unknown\n'
 }
 
-house_framework_version() {
+lab_framework_version() {
   [ -f "$1/README.md" ] || return 0
   tr '\n' ' ' < "$1/README.md" \
-    | grep -oE 'Started from \[house\]\([^)]*\) on [0-9-]+, at [^ ]+\.' \
+    | grep -oE 'Started from \[lab\]\([^)]*\) on [0-9-]+, at [^ ]+\.' \
     | sed 's/.*, at //; s/\.$//' | head -1 || true
 }
 
@@ -211,25 +211,25 @@ signing_describe() {
 }
 
 add_agent() {
-  local house="$1" name="$2" role="$3" owns="$4" charge="$5"
-  local kind house_name house_upper project work workspace home_dir roster_line
+  local lab="$1" name="$2" role="$3" owns="$4" charge="$5"
+  local kind lab_name lab_upper project work workspace home_dir roster_line
 
   validate_name "agent name" "$name"
   kind="$(agent_kind "$name" "$owns")"
-  if [ "$kind" = housekeeper ] && [ -n "$owns" ]; then die "the housekeeper owns no directory; drop --owns"; fi
-  if roster_has "$house" "$name"; then
-    die "$name is already on the roster of $(display_path "$house")"
+  if [ "$kind" = steward ] && [ -n "$owns" ]; then die "the steward owns no directory; drop --owns"; fi
+  if roster_has "$lab" "$name"; then
+    die "$name is already on the roster of $(display_path "$lab")"
   fi
-  if [ "$kind" = housekeeper ] && roster_has_kind "$house" housekeeper; then
-    die "$(display_path "$house") already has a housekeeper; a house has exactly one"
+  if [ "$kind" = steward ] && roster_has_kind "$lab" steward; then
+    die "$(display_path "$lab") already has a steward; a lab has exactly one"
   fi
 
-  house_name="$(house_name "$house")"
-  house_upper="$(upper_env "$house_name")"
-  project="$(house_project "$house")"
-  project="${project:-$house_name}"
-  work="$(house_work_dir "$house")"
-  workspace="$(agent_workspace "$house" "$name" "$kind")"
+  lab_name="$(lab_name "$lab")"
+  lab_upper="$(upper_env "$lab_name")"
+  project="$(lab_project "$lab")"
+  project="${project:-$lab_name}"
+  work="$(lab_work_dir "$lab")"
+  workspace="$(agent_workspace "$lab" "$name" "$kind")"
   home_dir="$workspace/home"
 
   case "$kind" in
@@ -242,8 +242,8 @@ add_agent() {
       charge="${charge:-Produces judgement the owner acts on, never patches.}"
       roster_line="- **$name** — $role. Owns no directory. $charge"
       ;;
-    housekeeper)
-      local default_charge="Keeps the household's written record true: the queue, the backlog, the notes, the branches, and this contract against what is actually on disk. No GitHub identity and no mail, by design."
+    steward)
+      local default_charge="Keeps the lab's written record true: the queue, the backlog, the notes, the branches, and this contract against what is actually on disk. No GitHub identity and no mail, by design."
       charge="${charge:-$default_charge}"
       roster_line="- **$name** — $role. Owns no directory. $charge"
       ;;
@@ -254,25 +254,25 @@ add_agent() {
     "ROLE=$role"
     "OWNS=$owns"
     "CHARGE=$charge"
-    "HOUSE_NAME=$house_name"
-    "HOUSE_UPPER=$house_upper"
-    "HOUSE_PATH=$(display_path "$house")"
+    "LAB_NAME=$lab_name"
+    "LAB_UPPER=$lab_upper"
+    "LAB_PATH=$(display_path "$lab")"
     "WORK_PATH=$(display_path "$work")"
     "PROJECT=$project"
     "WORKSPACE_PATH=$(display_path "$workspace")"
     "HOME_PATH=$(display_path "$home_dir")"
-    "AUTHOR_DOMAIN=$(house_author_domain "$house")"
+    "AUTHOR_DOMAIN=$(lab_author_domain "$lab")"
     "CREATED=$(today)"
   )
 
-  roster_append "$house" "$name" "$role" "$owns" "$kind"
+  roster_append "$lab" "$name" "$role" "$owns" "$kind"
   say "roster: $name ($kind)"
 
-  render "$HOUSE_SCAFFOLD/agent/$kind/note.md" "$house/notes/$name.md" "${vars[@]}"
+  render "$LAB_SCAFFOLD/agent/$kind/note.md" "$lab/notes/$name.md" "${vars[@]}"
   say "create: notes/$name.md"
 
-  insert_before_marker "$house/AGENTS.md" "<!-- house:roster -->" "$roster_line"
-  insert_before_marker "$house/AGENTS.md" "<!-- house:read-first -->" \
+  insert_before_marker "$lab/AGENTS.md" "<!-- lab:roster -->" "$roster_line"
+  insert_before_marker "$lab/AGENTS.md" "<!-- lab:read-first -->" \
     "| act as $name for the first time in a session | [\`notes/$name.md\`](notes/$name.md) |"
   say "update: AGENTS.md (roster, read-first)"
 
@@ -280,9 +280,9 @@ add_agent() {
     say "keep: $(display_path "$home_dir") already has an AGENTS.md"
   else
     mkdir -p "$home_dir"
-    render "$HOUSE_SCAFFOLD/agent/$kind/AGENTS.md" "$home_dir/AGENTS.md" "${vars[@]}"
-    render "$HOUSE_SCAFFOLD/agent/home/mise.toml" "$home_dir/mise.toml" "${vars[@]}"
-    render "$HOUSE_SCAFFOLD/agent/home/SCRATCHPAD.md" "$home_dir/SCRATCHPAD.md" "${vars[@]}"
+    render "$LAB_SCAFFOLD/agent/$kind/AGENTS.md" "$home_dir/AGENTS.md" "${vars[@]}"
+    render "$LAB_SCAFFOLD/agent/home/mise.toml" "$home_dir/mise.toml" "${vars[@]}"
+    render "$LAB_SCAFFOLD/agent/home/SCRATCHPAD.md" "$home_dir/SCRATCHPAD.md" "${vars[@]}"
     [ -d "$home_dir/.git" ] || git -C "$home_dir" init -q -b main
     say "create: $(display_path "$home_dir") (AGENTS.md, mise.toml, SCRATCHPAD.md; local repo, no remote)"
   fi
@@ -290,10 +290,10 @@ add_agent() {
 
 lineage_names() {
   local own name
-  own=" $(house_name "$1") $(house_project "$1" | tr '[:upper:]' '[:lower:]') "
+  own=" $(lab_name "$1") $(lab_project "$1" | tr '[:upper:]' '[:lower:]') "
   while IFS= read -r name; do
     case "$own" in *" $name "*) ;; *) printf '%s\n' "$name" ;; esac
-  done < <(awk '$1 == "house" { print $2 }' "$HOUSE_LIB_DIR/lineage-names")
+  done < <(awk '$1 == "lab" { print $2 }' "$LAB_LIB_DIR/lineage-names")
 }
 
 bash_version() {

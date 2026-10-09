@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-#MISE description="Orientation and setup health for the {{HOUSE_NAME}} household"
+#MISE description="Orientation and setup health for the {{LAB_NAME}} lab"
 set -eo pipefail
 
-roster="$HOUSE_DIR/roster.tsv"
+roster="$LAB_DIR/roster.tsv"
 
 on_roster() {
   awk -F '\t' -v n="$1" '!/^#/ && $1 == n { found = 1 } END { exit !found }' "$roster"
@@ -13,12 +13,12 @@ author="${GIT_AUTHOR_NAME:-unset}"
 echo "GIT_AUTHOR_NAME: $author"
 if [ "$author" = unset ]; then
   echo "not activated — ask the owner which agent you are, then: eval \"\$(mise run -q agent-env <name>)\""
-elif [ "$author" = housekeeper ]; then
-  echo "home: ~/agents/$HOUSE_NAME/home/AGENTS.md (the house's own; you are its voice)"
+elif [ "$author" = steward ]; then
+  echo "home: ~/agents/$LAB_NAME/home/AGENTS.md (the lab's own; you are its voice)"
 elif on_roster "$author"; then
   echo "home: ~/agents/$author/home/AGENTS.md"
 else
-  echo "not a household agent; owner commits need {{HOUSE_UPPER}}_OWNER_COMMIT=1"
+  echo "not a lab agent; owner commits need {{LAB_UPPER}}_OWNER_COMMIT=1"
 fi
 
 echo ""
@@ -27,7 +27,7 @@ agents="$(awk -F '\t' '!/^#/ && NF { print $1 }' "$roster" | tr '\n' ' ')"
 if [ -n "$agents" ]; then
   echo "$agents"
 else
-  echo "nobody yet → house agent add <name> --house $HOUSE_DIR --role <role>"
+  echo "nobody yet → lab agent add <name> --lab $LAB_DIR --role <role>"
 fi
 
 echo ""
@@ -59,7 +59,7 @@ fi
 
 echo ""
 echo "== work queue =="
-queue="$HOUSE_DIR/notes/work-queue.md"
+queue="$LAB_DIR/notes/work-queue.md"
 if grep -q '^- state: queued$' "$queue"; then
   grep -B1 '^- state: queued$' "$queue" | grep '^## ' | head -3
 else
@@ -68,4 +68,4 @@ fi
 
 echo ""
 echo "== read first =="
-echo "$HOUSE_DIR/AGENTS.md"
+echo "$LAB_DIR/AGENTS.md"
