@@ -158,6 +158,10 @@ agent_workspace() {
   fi
 }
 
+agent_secrets_dir() {
+  printf '%s/.secrets\n' "$(agent_workspace "$@")"
+}
+
 insert_before_marker() {
   local file="$1" marker="$2" text="$3"
   local tmp line found=0

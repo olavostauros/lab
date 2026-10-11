@@ -65,6 +65,56 @@ if [ -n "$hook_target" ]; then
   if [ -x "$hook_target" ]; then ok "pre-commit guard installed in the work tree"; else warn "pre-commit guard not installed → mise run install-hooks"; fi
 fi
 
+file_facts() {
+  stat -c '%u %a %h' "$1" 2>/dev/null || stat -f '%u %Lp %l' "$1"
+}
+
+dir_facts() {
+  stat -L -c '%u %a' "$1" 2>/dev/null || stat -L -f '%u %Lp' "$1"
+}
+
+private_file() {
+  local agent="$1" file="$2" shown uid mode links
+  shown="$(display_path "$file")"
+  if [ -L "$file" ] || [ ! -f "$file" ]; then fail "$agent: $shown is not a regular file, and secrets refuses a symlink → replace it with the file itself"; return 1; fi
+  read -r uid mode links < <(file_facts "$file")
+  if [ "$uid" != "$(id -u)" ]; then fail "$agent: $shown is not owned by you → chown $(id -un) $shown"; return 1; fi
+  if [ "$links" -ne 1 ]; then fail "$agent: $shown has $links links, and secrets refuses more than one → cp it and rm the original"; return 1; fi
+  if (( 8#$mode & 8#077 )); then fail "$agent: $shown is readable by others (mode $mode) → chmod 600 $shown"; return 1; fi
+}
+
+credentials() {
+  local agent="$1" dir="$2" identity="$2/identity.txt" vault="$2/vault.enc.yaml" uid mode recipient sound=1 tools=1
+  read -r uid mode < <(dir_facts "$dir")
+  if [ "$uid" != "$(id -u)" ]; then fail "$agent: $(display_path "$dir") is not owned by you → chown $(id -un) $(display_path "$dir")"; sound=0
+  elif (( 8#$mode & 8#022 )); then fail "$agent: $(display_path "$dir") is writable by others (mode $mode) → chmod 700 $(display_path "$dir")"; sound=0
+  fi
+  private_file "$agent" "$identity" || sound=0
+  if [ "$(grep -cvE '^(#|$)' "$identity")" -ne 1 ] || ! grep -qxE 'AGE-SECRET-KEY-1[0-9A-Z]{58}' "$identity"; then
+    fail "$agent: $(display_path "$identity") must hold exactly one AGE-SECRET-KEY-1… line → the owner mints one with age-keygen -o $(display_path "$identity")"; sound=0
+  fi
+  recipient="$(awk '/^# public key: / { print $4; exit }' "$identity")"
+  [[ "$recipient" =~ ^age1[0-9a-z]{58}$ ]] || { fail "$agent: $(display_path "$identity") has no '# public key: age1…' line, which agent-env reads for the recipient → age-keygen writes one"; sound=0; }
+  [ ! -e "$vault" ] || private_file "$agent" "$vault" || sound=0
+  if [ "$sound" -eq 1 ] && [ -e "$vault" ] && ! grep -qE "recipient: $recipient$" "$vault"; then
+    fail "$agent: $(display_path "$vault") is encrypted to a different recipient than the public-key line of $(display_path "$identity") → age-keygen -y $(display_path "$identity") prints the right one"; sound=0
+  fi
+  [ "$sound" -eq 1 ] || return 0
+  ok "$agent: credentials at $(display_path "$dir") (sops)"
+  command -v secrets >/dev/null 2>&1 || { tools=0; warn "$agent: secrets is not on PATH, and agent-env points it at this vault → shiv install secrets"; }
+  command -v sops >/dev/null 2>&1 || { tools=0; warn "$agent: sops is not on PATH, and secrets decrypts the vault through it → mise use sops in $(display_path "$HOUSE")"; }
+  if [ ! -e "$vault" ]; then
+    note "$agent: no vault yet at $(display_path "$vault"); the first secrets set creates it"
+  elif [ "$tools" -eq 0 ]; then
+    note "$agent: round trip skipped; secrets list needs both tools on PATH"
+  elif env SECRETS_PROVIDER=sops SECRETS_SOPS_FILE="$vault" SECRETS_SOPS_AGE_KEY_FILE="$identity" SECRETS_SOPS_RECIPIENT="$recipient" \
+         secrets list --prefix "$agent/" >/dev/null 2>&1; then
+    ok "$agent: secrets opens the vault with this identity"
+  else
+    fail "$agent: secrets cannot open the vault with this identity → eval \"\$(mise run -q agent-env $agent)\" in the house, then secrets list --prefix $agent/ says why"
+  fi
+}
+
 count=0
 keepers=0
 homes=()
@@ -79,6 +129,14 @@ while IFS= read -r agent; do
   if [ -f "$HOUSE/notes/$agent.md" ]; then ok "$agent: notes/$agent.md"; else fail "$agent: notes/$agent.md missing"; fi
   if grep -q "^- \*\*$agent\*\* — " "$HOUSE/AGENTS.md"; then ok "$agent: on the roster in AGENTS.md"; else fail "$agent: not listed under 'Who lives here' in AGENTS.md"; fi
   if [ -f "$home/AGENTS.md" ]; then ok "$agent: home at $(display_path "$home")"; homes+=("$home"); else warn "$agent: no home at $(display_path "$home")"; fi
+  secrets_dir="$(agent_secrets_dir "$HOUSE" "$agent" "$kind")"
+  if [ -f "$secrets_dir/identity.txt" ]; then
+    if [ "$kind" = housekeeper ]; then
+      fail "$agent: has $(display_path "$secrets_dir")/identity.txt; a housekeeper has no account, ever → move or delete it"
+    else
+      credentials "$agent" "$secrets_dir"
+    fi
+  fi
 done < <(roster_agents "$HOUSE")
 [ "$count" -gt 0 ] || warn "roster is empty → house agent add <name> --role <role>"
 [ "$keepers" -le 1 ] || fail "roster lists $keepers housekeepers; a house has exactly one"

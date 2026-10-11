@@ -67,7 +67,10 @@ setup() {
   assert_output_contains "ok:   vulcan: notes/vulcan.md"
   assert_output_contains "ok:   vulcan: home at"
   ! [[ "$output" == *"warn:"* ]]
+  ! [[ "$output" == *"note:"* ]]
   ! [[ "$output" == *"definition"* ]]
+  ! [[ "$output" == *"credential"* ]]
+  ! [[ "$output" == *"secrets"* ]]
 }
 
 @test "doctor fails on a second housekeeper or one under another name" {
@@ -112,4 +115,102 @@ setup() {
   run house doctor --house "$H"
   assert_failure
   assert_output_contains "hooks/agent-identity is not executable"
+}
+
+grant() {
+  local dir="$AGENTS_ROOT/$1/.secrets"
+  mkdir -p "$dir"
+  chmod 700 "$dir"
+  printf '# created: 2026-01-01T00:00:00Z\n# public key: %s\n%s\n' "$RECIPIENT" "$SECRET_KEY" > "$dir/identity.txt"
+  chmod 600 "$dir/identity.txt"
+  printf '%s' "$dir"
+}
+
+vault() {
+  printf 'vulcan/github-pat: ENC[AES256_GCM,data:x,type:str]\nsops:\n    age:\n        - recipient: %s\n          enc: |\n            x\n' "${2:-$RECIPIENT}" > "$1/vault.enc.yaml"
+  chmod 600 "$1/vault.enc.yaml"
+}
+RECIPIENT="age1$(printf 'q%.0s' $(seq 58))"
+SECRET_KEY="AGE-SECRET-KEY-1$(printf 'Q%.0s' $(seq 58))"
+
+@test "doctor fails a credential vault under the housekeeper's workspace" {
+  grant hearth >/dev/null
+  run house doctor --house "$H"
+  assert_failure
+  assert_output_contains "fail: housekeeper: has $AGENTS_ROOT/hearth/.secrets/identity.txt; a housekeeper has no account, ever"
+  assert_output_contains "doctor: 1 failing"
+}
+
+@test "doctor checks a granted identity the way secrets will, and skips the round trip when the tools are off PATH" {
+  house agent add vulcan --house "$H" --role backend --owns server/ >/dev/null
+  dir="$(grant vulcan)"
+  farm="$(path_without secrets)"
+  chmod 640 "$dir/identity.txt"
+  run env PATH="$farm" bash -c 'house "$@"' _ doctor --house "$H"
+  assert_failure
+  assert_output_contains "fail: vulcan: $dir/identity.txt is readable by others (mode 640) → chmod 600 $dir/identity.txt"
+  ! [[ "$output" == *"credentials at"* ]]
+  chmod 600 "$dir/identity.txt"
+  run env PATH="$farm" bash -c 'house "$@"' _ doctor --house "$H"
+  assert_success
+  assert_output_contains "ok:   vulcan: credentials at $dir (sops)"
+  assert_output_contains "warn: vulcan: secrets is not on PATH, and agent-env points it at this vault → shiv install secrets"
+  assert_output_contains "note: vulcan: no vault yet at $dir/vault.enc.yaml; the first secrets set creates it"
+  vault "$dir"
+  run env PATH="$farm" bash -c 'house "$@"' _ doctor --house "$H"
+  assert_success
+  assert_output_contains "note: vulcan: round trip skipped; secrets list needs both tools on PATH"
+  vault "$dir" "age1$(printf 'z%.0s' $(seq 58))"
+  run env PATH="$farm" bash -c 'house "$@"' _ doctor --house "$H"
+  assert_failure
+  assert_output_contains "fail: vulcan: $dir/vault.enc.yaml is encrypted to a different recipient than the public-key line of $dir/identity.txt → age-keygen -y $dir/identity.txt prints the right one"
+  ! [[ "$output" == *"credentials at"* ]]
+  assert_output_contains "doctor: 1 failing"
+  vault "$dir"
+  chmod 770 "$dir"
+  printf '%s\n' "$SECRET_KEY" > "$dir/identity.txt"
+  run env PATH="$farm" bash -c 'house "$@"' _ doctor --house "$H"
+  assert_failure
+  assert_output_contains "fail: vulcan: $dir is writable by others (mode 770) → chmod 700 $dir"
+  assert_output_contains "fail: vulcan: $dir/identity.txt has no '# public key: age1…' line"
+  assert_output_contains "doctor: 2 failing"
+}
+
+@test "doctor proves the identity opens the vault through secrets list, under the exports agent-env would print" {
+  house agent add vulcan --house "$H" --role backend --owns server/ >/dev/null
+  dir="$(grant vulcan)"
+  vault "$dir"
+  bin="$BATS_TEST_TMPDIR/bin"
+  mkdir -p "$bin"
+  printf '#!/usr/bin/env bash\nprintf "%%s\\n" "$SECRETS_PROVIDER $SECRETS_SOPS_FILE $SECRETS_SOPS_AGE_KEY_FILE $SECRETS_SOPS_RECIPIENT $*" >> "$SECRETS_LOG"\nexit "${SECRETS_EXIT:-0}"\n' > "$bin/secrets"
+  printf '#!/usr/bin/env bash\n' > "$bin/sops"
+  chmod +x "$bin/secrets" "$bin/sops"
+  export SECRETS_LOG="$BATS_TEST_TMPDIR/secrets.log"
+  run env PATH="$bin:$PATH" bash -c 'house "$@"' _ doctor --house "$H"
+  assert_success
+  assert_output_contains "ok:   vulcan: secrets opens the vault with this identity"
+  ! [[ "$output" == *"warn:"* ]]
+  [ "$(cat "$SECRETS_LOG")" = "sops $dir/vault.enc.yaml $dir/identity.txt $RECIPIENT list --prefix vulcan/" ]
+  run env PATH="$bin:$PATH" SECRETS_EXIT=1 bash -c 'house "$@"' _ doctor --house "$H"
+  assert_failure
+  assert_output_contains "fail: vulcan: secrets cannot open the vault with this identity → eval \"\$(mise run -q agent-env vulcan)\" in the house, then secrets list --prefix vulcan/ says why"
+  assert_output_contains "doctor: 1 failing"
+}
+
+@test "doctor judges a symlinked .secrets by the directory it points at, so the fix it names applies" {
+  house agent add vulcan --house "$H" --role backend --owns server/ >/dev/null
+  dir="$(grant vulcan)"
+  farm="$(path_without secrets)"
+  mv "$dir" "$BATS_TEST_TMPDIR/elsewhere"
+  ln -s "$BATS_TEST_TMPDIR/elsewhere" "$dir"
+  run env PATH="$farm" bash -c 'house "$@"' _ doctor --house "$H"
+  assert_success
+  assert_output_contains "ok:   vulcan: credentials at $dir (sops)"
+  chmod 770 "$BATS_TEST_TMPDIR/elsewhere"
+  run env PATH="$farm" bash -c 'house "$@"' _ doctor --house "$H"
+  assert_failure
+  assert_output_contains "fail: vulcan: $dir is writable by others (mode 770) → chmod 700 $dir"
+  chmod 700 "$dir"
+  run env PATH="$farm" bash -c 'house "$@"' _ doctor --house "$H"
+  assert_success
 }

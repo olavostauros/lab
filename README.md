@@ -53,7 +53,10 @@ To run `house`:
 To live in a house: git, bash and mise. A generated house's own tasks never
 call shiv, and `house doctor` checks the list above — the bash and git
 versions, the git identity, mise and jq on `PATH` — and prints the fix for
-each line it fails.
+each line it fails. An agent the owner has given an account also needs
+[`secrets`](https://github.com/KnickKnackLabs/secrets) and
+[`sops`](https://github.com/getsops/sops) on `PATH`; `doctor` says so when
+the grant is there and the tools are not, and asks for neither otherwise.
 
 The list is established, not asserted: on every pull request, a CI job
 starts from a `debian:stable-slim` image with only those packages, runs the
@@ -174,9 +177,12 @@ repo; you commit it as the owner.
 The facts: the house's name and path, the project and the owner, given to
 `init`. The roster, and each agent's role, directory and charge, given to
 `agent add`. The loosenings table, one dated row at a time, in your own
-turn. Everything under `notes/`, including the house style and each
-agent's Stance, which the framework writes and you may change. The
-contract itself is Tier 2 for every agent and yours alone to edit.
+turn. A granted account, as a row in that table and two files under the
+agent's workspace, `~/agents/<name>/.secrets/`: an age identity you mint
+and a `secrets` sops vault. Everything under `notes/`, including the house
+style and each agent's Stance, which the framework writes and you may
+change. The contract itself is Tier 2 for every agent and yours alone to
+edit.
 
 What is not yours is the shape: the tiers, the two-key rule, the markers,
 the guard, one housekeeper. `house doctor` checks that shape, and it also
@@ -184,7 +190,12 @@ fails on a leftover `{{KEY}}` or on the name of a household the framework
 grew out of (the list is `lib/lineage-names`; `KnickKnackLabs` outside the
 tool pin is added), because those are the framework's leftovers and never
 your text. The house's own name and project are never counted, so a house
-that happens to share a name with one of those passes.
+that happens to share a name with one of those passes. Where an identity
+file sits under an agent's workspace, `doctor` also checks what `secrets`
+will check before an activation can fail on it — the directory and both
+files owner-only, one age key, a recipient line — proves the identity
+opens the vault with one `secrets list`, and fails any such file under the
+housekeeper's workspace. Without the file it says nothing.
 
 If your git config signs commits, `init` says so and names the key before
 the passphrase prompt can appear, and `--no-commit` avoids it. Every house's
@@ -272,8 +283,8 @@ These hold in every house, and `house doctor` checks the ones a script can:
   name.** It has no outward identity, and no upgrade path gives it one.
 - **A fresh house is complete.** The framework asserts; the owner supplies
   facts and grants widenings. `house init x && house doctor --house x`
-  exits 0, and no generated file names a lineage, a runner, or a toolchain
-  outside the `bats` pin.
+  exits 0, and no generated file names a lineage or a runner, or depends
+  on a toolchain outside the `bats` pin.
 
 ## Development
 

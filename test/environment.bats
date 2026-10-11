@@ -24,19 +24,6 @@ doctor_with() {
   run env "$@" bash -c 'house "$@"' _ doctor --house "$H"
 }
 
-path_without() {
-  local farm="$BATS_TEST_TMPDIR/path-without" dir f name
-  mkdir -p "$farm"
-  IFS=: read -ra dirs <<< "$PATH"
-  for dir in "${dirs[@]}"; do
-    for f in "$dir"/*; do
-      name="${f##*/}"
-      if [ -x "$f" ] && [ "$name" != "$1" ] && [ ! -e "$farm/$name" ]; then ln -s "$f" "$farm/$name"; fi
-    done
-  done
-  printf '%s' "$farm"
-}
-
 @test "doctor reports every environment line ok when the tool has what it needs" {
   doctor_with PATH="$BIN:$PATH:$HOME/.local/bin"
   assert_success

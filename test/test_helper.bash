@@ -69,6 +69,19 @@ EOF
     GIT_CONFIG_KEY_3=user.signingkey GIT_CONFIG_VALUE_3=0123456789ABCDEF
 }
 
+path_without() {
+  local farm="$BATS_TEST_TMPDIR/path-without" dir f name
+  mkdir -p "$farm"
+  IFS=: read -ra dirs <<< "$PATH"
+  for dir in "${dirs[@]}"; do
+    for f in "$dir"/*; do
+      name="${f##*/}"
+      if [ -x "$f" ] && [ "$name" != "$1" ] && [ ! -e "$farm/$name" ]; then ln -s "$f" "$farm/$name"; fi
+    done
+  done
+  printf '%s' "$farm"
+}
+
 assert_success() {
   if [ "$status" -ne 0 ]; then
     printf 'expected success, got status %s\noutput:\n%s\n' "$status" "$output" >&2
