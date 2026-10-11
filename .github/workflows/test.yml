@@ -36,9 +36,9 @@ jobs:
       - run: curl -fsSL shiv.knacklabs.co/install.sh | bash
       - run: |
           export PATH="$HOME/.local/bin:$PATH"
-          shiv install house "$GITHUB_WORKSPACE"
-          house --version
-          house version
-          [ "$(house --version | awk '{ sub(/\*$/, "", $2); print $2 }')" = "$(house version)" ]
-          house init t --at /tmp/t --owner x
-          house doctor --house /tmp/t
+          shiv install lab "$GITHUB_WORKSPACE"
+          lab --version
+          lab version
+          [ "$(lab --version | awk '{ sub(/\*$/, "", $2); print $2 }')" = "$(lab version)" ]
+          lab init t --at /tmp/t --owner x
+          lab doctor --lab /tmp/t

@@ -8,7 +8,7 @@ printf '\n== bats ==\n'
 bats --print-output-on-failure test
 
 printf '\n== scaffold ==\n'
-for f in scaffold/house/hooks/* scaffold/house/.mise/tasks/*; do
+for f in scaffold/lab/hooks/* scaffold/lab/.mise/tasks/*; do
   bash -n "$f"
 done
 echo ok

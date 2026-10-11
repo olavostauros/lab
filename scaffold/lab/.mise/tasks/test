@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#MISE description="Run the household's own checks"
+#MISE description="Run the lab's own checks"
 #MISE dir="{{ config_root }}"
 set -euo pipefail
 

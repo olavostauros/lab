@@ -1,7 +1,7 @@
 ---
 title: work-queue
 tags: [queue]
-related: [household-backlog]
+related: [lab-backlog]
 created: {{CREATED}}
 updated: {{CREATED}}
 ---
@@ -23,7 +23,7 @@ Entry shape:
 - scope: <one reviewable idea, with what is out of scope named>
 - branch: `<name>/<topic>` (`<sha>`) — base `main` (`<sha>`)
 - pr: <url once open>
-- review: <verdict at <sha>, with the comment's url, if the house has a reviewer>
+- review: <verdict at <sha>, with the comment's url, if the lab has a reviewer>
 - notes: <what the agent found>
 ```
 

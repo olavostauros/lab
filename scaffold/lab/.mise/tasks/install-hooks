@@ -5,5 +5,5 @@ set -eo pipefail
 target="$(git -C "$WORK_DIR" rev-parse --git-path hooks/pre-commit)"
 case "$target" in /*) ;; *) target="$WORK_DIR/$target" ;; esac
 mkdir -p "$(dirname "$target")"
-ln -sf "$HOUSE_DIR/hooks/agent-identity" "$target"
-echo "installed: $target -> $HOUSE_DIR/hooks/agent-identity"
+ln -sf "$LAB_DIR/hooks/agent-identity" "$target"
+echo "installed: $target -> $LAB_DIR/hooks/agent-identity"

@@ -4,18 +4,18 @@
 # agent, and a runner may start a fresh shell for every command, so a commit
 # made without re-running `agent-env` lands authored by the owner.
 #
-# {{HOUSE_UPPER}}_OWNER_COMMIT=1 is the human's escape hatch, not an agent's.
+# {{LAB_UPPER}}_OWNER_COMMIT=1 is the human's escape hatch, not an agent's.
 # An agent that sets it is disabling a guard to make a session pass, which
 # Tier 3 forbids outright.
 set -eo pipefail
 
 hook="$(readlink -f "${BASH_SOURCE[0]}")"
-house="${HOUSE_DIR:-$(cd "$(dirname "$hook")/.." && pwd)}"
-roster="$house/roster.tsv"
+lab="${LAB_DIR:-$(cd "$(dirname "$hook")/.." && pwd)}"
+roster="$lab/roster.tsv"
 
 author="${GIT_AUTHOR_NAME:-$(git config user.name 2>/dev/null || true)}"
 
-if [ "${{{HOUSE_UPPER}}_OWNER_COMMIT:-}" = "1" ]; then
+if [ "${{{LAB_UPPER}}_OWNER_COMMIT:-}" = "1" ]; then
   exit 0
 fi
 
@@ -31,8 +31,8 @@ fi
 echo "ERROR: refusing this commit — author is '${author:-unset}', not an agent on $roster" >&2
 echo "" >&2
 echo "Activate first, in this same shell:" >&2
-echo "  eval \"\$(mise -C $house run -q agent-env <name>)\"" >&2
+echo "  eval \"\$(mise -C $lab run -q agent-env <name>)\"" >&2
 echo "" >&2
 echo "If you are the owner and meant to commit as yourself:" >&2
-echo "  {{HOUSE_UPPER}}_OWNER_COMMIT=1 git commit ..." >&2
+echo "  {{LAB_UPPER}}_OWNER_COMMIT=1 git commit ..." >&2
 exit 1

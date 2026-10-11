@@ -2,8 +2,8 @@ load test_helper
 
 setup() {
   export MISE_TRUSTED_CONFIG_PATHS="$BATS_TEST_TMPDIR"
-  export GIT_AUTHOR_NAME="house test"
-  export GIT_AUTHOR_EMAIL="house-test@example.invalid"
+  export GIT_AUTHOR_NAME="lab test"
+  export GIT_AUTHOR_EMAIL="lab-test@example.invalid"
   export GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME"
   export GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
   COPY="$BATS_TEST_TMPDIR/copy"
@@ -35,7 +35,7 @@ commit_copy() {
   assert_success
   [ "$output" = "$(git -C "$COPY" rev-parse --short HEAD)" ]
   [[ "$output" =~ ^[0-9a-f]{7,}$ ]]
-  run env HOUSE_FRAMEWORK_VERSION=v1.2.3 MISE_AUTO_INSTALL=0 mise -C "$COPY" run -q version
+  run env LAB_FRAMEWORK_VERSION=v1.2.3 MISE_AUTO_INSTALL=0 mise -C "$COPY" run -q version
   [ "$output" = "v1.2.3" ]
 }
 

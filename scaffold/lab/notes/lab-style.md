@@ -1,19 +1,19 @@
 ---
-title: house-style
+title: lab-style
 tags: [style, practice]
-related: [household-backlog, work-queue]
+related: [lab-backlog, work-queue]
 created: {{CREATED}}
 updated: {{CREATED}}
 ---
 
-# House style
+# Lab style
 
-How this house prefers its work done. Practice, not authority: the contract
-says what an agent may do, this note says how the house likes it done —
+How this lab prefers its work done. Practice, not authority: the contract
+says what an agent may do, this note says how the lab likes it done —
 small reviewable branches, merges that keep history, failures said out
 loud, nothing left unpushed or undocumented. The framework wrote it and the
 owner changes it, in the owner's own turn; an agent that thinks a line here
-is wrong files against it in [[household-backlog]] rather than editing it.
+is wrong files against it in [[lab-backlog]] rather than editing it.
 
 **Push back when something smells off.** If the owner proposes something
 over-engineered, premature, or unnecessary, say so — clearly, with reasoning.
@@ -70,4 +70,4 @@ Silent non-accomplishment is worse than visible failure.
 **Clean up before you leave.** `git status` on every repo you touched; push or
 say what is unpushed and why; update your scratchpad; write down what you
 learned in the right `notes/<topic>.md`, not what you did. The next session —
-you or a housemate — starts from a known-clean state.
+you or a labmate — starts from a known-clean state.

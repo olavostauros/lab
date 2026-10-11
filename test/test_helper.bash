@@ -1,34 +1,34 @@
-house() {
+lab() {
   local task="$1"
   shift
   case "$task" in
     agent) task="$task:$1"; shift ;;
   esac
   cd "$REPO_DIR" && env \
-    HOUSE_CALLER_PWD="$CALLER" \
-    HOUSE_AGENTS_ROOT="$AGENTS_ROOT" \
-    HOUSE_DEFINITIONS_DIR="$DEFINITIONS_DIR" \
+    LAB_CALLER_PWD="$CALLER" \
+    LAB_AGENTS_ROOT="$AGENTS_ROOT" \
+    LAB_DEFINITIONS_DIR="$DEFINITIONS_DIR" \
     GIT_CONFIG_GLOBAL=/dev/null \
     GIT_CONFIG_NOSYSTEM=1 \
     MISE_AUTO_INSTALL=0 \
     mise run -q "$task" "$@"
 }
-export -f house
+export -f lab
 
-in_house() {
+in_lab() {
   local dir="$1"
   shift
   env GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 MISE_AUTO_INSTALL=0 mise -C "$dir" run -q "$@"
 }
-export -f in_house
+export -f in_lab
 
-house_setup() {
+lab_setup() {
   export CALLER="$BATS_TEST_TMPDIR/caller"
   export AGENTS_ROOT="$BATS_TEST_TMPDIR/agents"
   export DEFINITIONS_DIR="$BATS_TEST_TMPDIR/definitions"
   export MISE_TRUSTED_CONFIG_PATHS="$BATS_TEST_TMPDIR"
-  export GIT_AUTHOR_NAME="house test"
-  export GIT_AUTHOR_EMAIL="house-test@example.invalid"
+  export GIT_AUTHOR_NAME="lab test"
+  export GIT_AUTHOR_EMAIL="lab-test@example.invalid"
   export GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME"
   export GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
   export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=user.name GIT_CONFIG_VALUE_0="$GIT_AUTHOR_NAME"
@@ -36,7 +36,7 @@ house_setup() {
 }
 
 setup() {
-  house_setup
+  lab_setup
 }
 
 make_project() {

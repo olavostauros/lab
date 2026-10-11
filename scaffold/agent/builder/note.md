@@ -1,7 +1,7 @@
 ---
 title: {{AGENT}}
 tags: [identity, agent]
-related: [work-queue, household-backlog]
+related: [work-queue, lab-backlog]
 created: {{CREATED}}
 updated: {{CREATED}}
 ---
@@ -25,7 +25,7 @@ Owns `{{WORK_PATH}}/{{OWNS}}`. {{CHARGE}}
 
 - `GIT_AUTHOR_NAME={{AGENT}}`, `GIT_AUTHOR_EMAIL={{AGENT}}@{{AUTHOR_DOMAIN}}` —
   a git author label, not a mailbox and not a GitHub account. Set by
-  `mise run agent-env {{AGENT}}` from `{{HOUSE_PATH}}`.
+  `mise run agent-env {{AGENT}}` from `{{LAB_PATH}}`.
 - No GitHub account, no signing key, no mail. Pushes and PRs go through the
   owner's `gh` login and say so in the PR body.
 - Home: `{{HOME_PATH}}/` — local git repo, no remote.

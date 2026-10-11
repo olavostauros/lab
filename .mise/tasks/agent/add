@@ -1,31 +1,31 @@
 #!/usr/bin/env bash
-#MISE description="Put an agent on a house's roster: identity note and home repo"
-#USAGE arg "<name>" help="Agent name, lowercase (for example: vulcan); 'housekeeper' is the housekeeper"
-#USAGE flag "--house <path>" help="The house directory; defaults to the current directory"
-#USAGE flag "--role <role>" help="Two or three words: what the agent is for; defaults to 'housekeeping' for the housekeeper"
+#MISE description="Put an agent on a lab's roster: identity note and home repo"
+#USAGE arg "<name>" help="Agent name, lowercase (for example: vulcan); 'steward' is the steward"
+#USAGE flag "--lab <path>" help="The lab directory; defaults to the current directory"
+#USAGE flag "--role <role>" help="Two or three words: what the agent is for; defaults to 'stewardship' for the steward"
 #USAGE flag "--owns <dir>" help="Directory under the work tree a builder owns, with a trailing slash; without it the agent is a judge"
 #USAGE flag "--charge <charge>" help="One sentence on what the agent does; defaults to a sentence built from the kind"
-#USAGE example "house agent add vulcan --role backend --owns server/ --charge 'Owns the schema, the domain model and the API.'" header="A builder"
-#USAGE example "house agent add argus --role 'review and security' --charge 'Reads every pull request into main before the owner merges it.'" header="A judge"
+#USAGE example "lab agent add vulcan --role backend --owns server/ --charge 'Owns the schema, the domain model and the API.'" header="A builder"
+#USAGE example "lab agent add argus --role 'review and security' --charge 'Reads every pull request into main before the owner merges it.'" header="A judge"
 set -euo pipefail
 
-source "$MISE_CONFIG_ROOT/lib/house.sh"
+source "$MISE_CONFIG_ROOT/lib/lab.sh"
 
 NAME="${usage_name:?an agent name is required}"
-HOUSE="$(house_root "${usage_house:-.}")"
+LAB="$(lab_root "${usage_lab:-.}")"
 OWNS="${usage_owns:-}"
 KIND="$(agent_kind "$NAME" "$OWNS")"
 ROLE="${usage_role:-}"
-if [ -z "$ROLE" ] && [ "$KIND" = housekeeper ]; then ROLE=housekeeping; fi
+if [ -z "$ROLE" ] && [ "$KIND" = steward ]; then ROLE=stewardship; fi
 [ -n "$ROLE" ] || die "--role is required"
 
-add_agent "$HOUSE" "$NAME" "$ROLE" "$OWNS" "${usage_charge:-}"
+add_agent "$LAB" "$NAME" "$ROLE" "$OWNS" "${usage_charge:-}"
 
 say ""
-say "done: $NAME joins $(house_name "$HOUSE") as $ROLE"
-if [ "$KIND" = housekeeper ]; then
-  say "next: wake it once and let it report; its first sweep is the house's first audit"
+say "done: $NAME joins $(lab_name "$LAB") as $ROLE"
+if [ "$KIND" = steward ]; then
+  say "next: wake it once and let it report; its first sweep is the lab's first audit"
 else
-  say "next: read notes/$NAME.md — its Stance is the framework's for a $KIND, and narrowing it is $NAME's — then commit the house as the owner"
+  say "next: read notes/$NAME.md — its Stance is the framework's for a $KIND, and narrowing it is $NAME's — then commit the lab as the owner"
   say "next: file the agent's first entry in notes/work-queue.md, addressed to $NAME"
 fi

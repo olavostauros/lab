@@ -1,31 +1,31 @@
 load test_helper
 
 setup() {
-  house_setup
+  lab_setup
   H="$BATS_TEST_TMPDIR/hearth"
-  house init hearth --at "$H" --project "the forge" >/dev/null
+  lab init hearth --at "$H" --project "the forge" >/dev/null
 }
 
-@test "a fresh house already has its housekeeper, and there is one per house under one name" {
-  grep -q $'^housekeeper\thousekeeping\t\thousekeeper$' "$H/roster.tsv"
-  assert_file_contains "$H/notes/housekeeper.md" "The housekeeper of the forge"
-  assert_file_contains "$AGENTS_ROOT/hearth/home/AGENTS.md" "the housekeeper of **the forge**"
-  [ ! -e "$AGENTS_ROOT/housekeeper" ]
-  run house agent add housekeeper --house "$H"
+@test "a fresh lab already has its steward, and there is one per lab under one name" {
+  grep -q $'^steward\tstewardship\t\tsteward$' "$H/roster.tsv"
+  assert_file_contains "$H/notes/steward.md" "The steward of the forge"
+  assert_file_contains "$AGENTS_ROOT/hearth/home/AGENTS.md" "the steward of **the forge**"
+  [ ! -e "$AGENTS_ROOT/steward" ]
+  run lab agent add steward --lab "$H"
   assert_failure
   assert_output_contains "already on the roster"
-  run house agent add housekeeper --house "$H" --owns tidy/
+  run lab agent add steward --lab "$H" --owns tidy/
   assert_failure
-  assert_output_contains "the housekeeper owns no directory"
-  sed -i '/^housekeeper\t/d' "$H/roster.tsv"
-  printf 'hestia\thousekeeping\t\thousekeeper\n' >> "$H/roster.tsv"
-  run house agent add housekeeper --house "$H"
+  assert_output_contains "the steward owns no directory"
+  sed -i '/^steward\t/d' "$H/roster.tsv"
+  printf 'hestia\tstewardship\t\tsteward\n' >> "$H/roster.tsv"
+  run lab agent add steward --lab "$H"
   assert_failure
-  assert_output_contains "already has a housekeeper; a house has exactly one"
+  assert_output_contains "already has a steward; a lab has exactly one"
 }
 
 @test "agent add puts a builder on the roster with note and home, and no harness file" {
-  run house agent add vulcan --house "$H" --role backend --owns server/ --charge "Owns the schema and the API."
+  run lab agent add vulcan --lab "$H" --role backend --owns server/ --charge "Owns the schema and the API."
   assert_success
   assert_output_contains "roster: vulcan (builder)"
   assert_output_contains "its Stance is the framework's for a builder"
@@ -49,11 +49,11 @@ setup() {
   [ -z "$(ls -A "$DEFINITIONS_DIR")" ]
   ! grep -rq '{{' "$H/notes/vulcan.md" "$AGENTS_ROOT/vulcan/home"
   ! grep -rqiwE "$(awk '$1 == "runner" { print $2 }' "$REPO_DIR/lib/lineage-names" | paste -sd '|')" "$H" "$AGENTS_ROOT/vulcan/home"
-  ! grep -rq 'house:decide' "$H/notes/vulcan.md" "$AGENTS_ROOT/vulcan/home"
+  ! grep -rq 'lab:decide' "$H/notes/vulcan.md" "$AGENTS_ROOT/vulcan/home"
 }
 
 @test "agent add without --owns makes a judge" {
-  run house agent add argus --house "$H" --role "review and security"
+  run lab agent add argus --lab "$H" --role "review and security"
   assert_success
   assert_output_contains "roster: argus (judge)"
   assert_output_contains "its Stance is the framework's for a judge"
@@ -64,15 +64,15 @@ setup() {
   assert_file_contains "$H/notes/argus.md" "Judgement, not patches"
   assert_file_contains "$H/notes/argus.md" "The diff before the description, and the test before the diff"
   assert_file_says "$H/notes/argus.md" "Narrowing this stance is argus's; widening it is the owner's."
-  ! grep -q 'house:decide' "$H/notes/argus.md"
+  ! grep -q 'lab:decide' "$H/notes/argus.md"
 }
 
 @test "agent add refuses a duplicate and an agent with no role" {
-  house agent add vulcan --house "$H" --role backend --owns server/
-  run house agent add vulcan --house "$H" --role backend --owns server/
+  lab agent add vulcan --lab "$H" --role backend --owns server/
+  run lab agent add vulcan --lab "$H" --role backend --owns server/
   assert_failure
   assert_output_contains "already on the roster"
-  run house agent add loki --house "$H"
+  run lab agent add loki --lab "$H"
   assert_failure
   assert_output_contains "--role is required"
 }
@@ -80,19 +80,19 @@ setup() {
 @test "agent add keeps a home that exists" {
   mkdir -p "$AGENTS_ROOT/apollo/home"
   printf 'mine\n' > "$AGENTS_ROOT/apollo/home/AGENTS.md"
-  run house agent add apollo --house "$H" --role music
+  run lab agent add apollo --lab "$H" --role music
   assert_success
   assert_output_contains "keep:"
   [ "$(cat "$AGENTS_ROOT/apollo/home/AGENTS.md")" = "mine" ]
 }
 
-@test "after agent add the house's own checks and guard know the new agent" {
-  house agent add vulcan --house "$H" --role backend --owns server/
-  house agent add argus --house "$H" --role review
-  run in_house "$H" test
+@test "after agent add the lab's own checks and guard know the new agent" {
+  lab agent add vulcan --lab "$H" --role backend --owns server/
+  lab agent add argus --lab "$H" --role review
+  run in_lab "$H" test
   assert_success
 
-  run in_house "$H" agent-env vulcan
+  run in_lab "$H" agent-env vulcan
   assert_success
   assert_output_contains "export GIT_AUTHOR_NAME=vulcan"
   assert_output_contains "export GIT_AUTHOR_EMAIL=vulcan@hearth.invalid"
@@ -103,21 +103,21 @@ setup() {
   assert_failure
 }
 
-@test "agent add resolves the house from the caller's directory" {
+@test "agent add resolves the lab from the caller's directory" {
   export CALLER="$H"
-  run house agent add vulcan --role backend --owns server/
+  run lab agent add vulcan --role backend --owns server/
   assert_success
   grep -q '^vulcan' "$H/roster.tsv"
 }
 
-@test "agent add rejects a directory that is not a house" {
-  run house agent add vulcan --house "$BATS_TEST_TMPDIR" --role backend
+@test "agent add rejects a directory that is not a lab" {
+  run lab agent add vulcan --lab "$BATS_TEST_TMPDIR" --role backend
   assert_failure
-  assert_output_contains "not a house"
+  assert_output_contains "not a lab"
 }
 
 @test "agent add renders a charge with an ampersand verbatim" {
-  run house agent add caesar --house "$H" --role payments --owns payments/ --charge 'Takes money & refunds it.'
+  run lab agent add caesar --lab "$H" --role payments --owns payments/ --charge 'Takes money & refunds it.'
   assert_success
   assert_file_contains "$H/AGENTS.md" "Takes money & refunds it."
   assert_file_contains "$H/notes/caesar.md" "Takes money & refunds it."
