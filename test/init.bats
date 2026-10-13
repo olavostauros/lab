@@ -44,6 +44,17 @@ load test_helper
   [ -n "$(git -C "$project" status --porcelain -- hall)" ]
 }
 
+@test "init --embedded nested deeper still points WORK_DIR at the top of the repo" {
+  project="$(make_project)"
+  run lab init hall --at "$project/labs/hall" --embedded
+  assert_success
+  assert_file_contains "$project/labs/hall/mise.toml" 'WORK_DIR = "{{ config_root }}/../.."'
+  [ "$(cd "$project/labs/hall/../.." && pwd -P)" = "$(cd "$project" && pwd -P)" ]
+  run lab doctor --lab "$project/labs/hall"
+  assert_success
+  assert_output_contains "ok:   WORK_DIR resolves to the work tree"
+}
+
 @test "init --embedded refuses a parent that is not a git repository" {
   run lab init hall --at "$BATS_TEST_TMPDIR/loose/hall" --embedded
   assert_failure
