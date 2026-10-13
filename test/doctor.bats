@@ -117,6 +117,34 @@ setup() {
   assert_output_contains "hooks/agent-identity is not executable"
 }
 
+@test "doctor fails a WORK_DIR that misses the top of the repo, and names the right one" {
+  project="$(make_project)"
+  lab init hall --at "$project/labs/hall" --embedded >/dev/null
+  sed -i 's|^WORK_DIR = .*|WORK_DIR = "{{ config_root }}/.."|' "$project/labs/hall/mise.toml"
+  run lab doctor --lab "$project/labs/hall"
+  assert_failure
+  assert_output_contains "fail: WORK_DIR in mise.toml resolves to $project/labs, not the work tree $project"
+  assert_output_contains 'set WORK_DIR = "{{ config_root }}/../.."'
+}
+
+@test "doctor leaves an owner's own WORK_DIR expression alone" {
+  sed -i 's|^WORK_DIR = .*|WORK_DIR = "{{ env.HOME }}"|' "$H/mise.toml"
+  run lab doctor --lab "$H"
+  assert_success
+  ! [[ "$output" == *"WORK_DIR"* ]]
+}
+
+@test "doctor warns when the installed guard dangles after a move" {
+  in_lab "$H" install-hooks >/dev/null
+  mv "$H" "$BATS_TEST_TMPDIR/moved"
+  run lab doctor --lab "$BATS_TEST_TMPDIR/moved"
+  assert_success
+  assert_output_contains "warn: pre-commit guard points at $H/hooks/agent-identity, which is gone (was the lab moved?) → mise run install-hooks"
+  in_lab "$BATS_TEST_TMPDIR/moved" install-hooks >/dev/null
+  run lab doctor --lab "$BATS_TEST_TMPDIR/moved"
+  assert_output_contains "ok:   pre-commit guard installed in the work tree"
+}
+
 grant() {
   local dir="$AGENTS_ROOT/$1/.secrets"
   mkdir -p "$dir"

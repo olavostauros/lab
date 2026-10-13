@@ -31,7 +31,13 @@ if [ "$EMBEDDED" = "true" ]; then
   WORK="$(git -C "$PARENT" rev-parse --show-toplevel 2>/dev/null || true)"
   [ -n "$WORK" ] || die "--embedded needs the parent of $TARGET to be inside a git repository"
   PROJECT="${usage_project:-$(basename "$WORK")}"
-  WORK_DIR_EXPR='{{ config_root }}/..'
+  # One '..' per directory between the lab and the top of the repo.
+  WORK_DIR_EXPR='{{ config_root }}'
+  rel="${TARGET#"$WORK"/}"
+  while :; do
+    WORK_DIR_EXPR+='/..'
+    case "$rel" in */*) rel="${rel#*/}" ;; *) break ;; esac
+  done
   PLACEMENT="This lab lives **inside** the project it works on: \`$(display_path "$TARGET")\` is a directory of the \`$PROJECT\` repo, not a repo of its own. Home and work share one git history, so the rules below bind both."
 else
   WORK="$TARGET"

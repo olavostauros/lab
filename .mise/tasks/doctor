@@ -62,7 +62,23 @@ case "$hook_target" in
   *)   hook_target="$WORK/$hook_target" ;;
 esac
 if [ -n "$hook_target" ]; then
-  if [ -x "$hook_target" ]; then ok "pre-commit guard installed in the work tree"; else warn "pre-commit guard not installed → mise run install-hooks"; fi
+  if [ -x "$hook_target" ]; then ok "pre-commit guard installed in the work tree"
+  elif [ -L "$hook_target" ]; then warn "pre-commit guard points at $(readlink "$hook_target"), which is gone (was the lab moved?) → mise run install-hooks"
+  else warn "pre-commit guard not installed → mise run install-hooks"
+  fi
+fi
+
+# Only the shape init writes is checked; an owner's own expression is left alone.
+work_expr="$(sed -n 's/^WORK_DIR = "\(.*\)"$/\1/p' "$LAB/mise.toml" 2>/dev/null | head -1)"
+if [[ "$work_expr" =~ ^\{\{\ config_root\ \}\}(/\.\.)*$ ]]; then
+  resolved="$(cd "$LAB${work_expr#"{{ config_root }}"}" 2>/dev/null && pwd -P || true)"
+  if [ "$resolved" = "$WORK" ]; then ok "WORK_DIR resolves to the work tree"
+  else
+    want='{{ config_root }}'
+    rel="${LAB#"$WORK"}"
+    while [ -n "$rel" ]; do want+='/..'; rel="${rel%/*}"; done
+    fail "WORK_DIR in mise.toml resolves to $(display_path "${resolved:-?}"), not the work tree $(display_path "$WORK") → set WORK_DIR = \"$want\""
+  fi
 fi
 
 file_facts() {
