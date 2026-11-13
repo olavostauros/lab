@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+# The task surface needs bash 4+ (mapfile, dynamic fds). macOS ships 3.2 —
+# say so before the first modern builtin, the way doctor would.
+if [ "${BASH_VERSINFO[0]:-0}" -lt 4 ]; then
+  printf 'Error: peninsula needs bash 4 or newer — this shell is %s\n' "${BASH_VERSION:-not bash}" >&2
+  exit 1
+fi
+
 PENINSULA_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PENINSULA_REPO_DIR="$(cd "$PENINSULA_LIB_DIR/.." && pwd)"
 PENINSULA_SCAFFOLD="$PENINSULA_REPO_DIR/scaffold"

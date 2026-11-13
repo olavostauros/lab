@@ -41,6 +41,12 @@ jobs:
           # Serialize installation without changing test and lint behavior.
           MISE_JOBS: 1
 
+      - name: Install bash 4+ (macOS)
+        # Tasks need bash 4 (mapfile, dynamic fds); the runner ships 3.2.
+        # Homebrew's prefix is already ahead of /bin on PATH.
+        if: runner.os == 'macOS'
+        run: brew install bash
+
       - name: Run validation
         # Keep the same local gate; full output survives this ephemeral runner.
         run: mise run validate --verbose

@@ -9,7 +9,7 @@ peninsula() {
   case "$task" in
     agent) task="$task:$1"; shift ;;
   esac
-  cd "$REPO_DIR" && env \
+  cd "$REPO_DIR" && env -u MISE_YES -u PENINSULA_YES \
     PENINSULA_CALLER_PWD="${CALLER:-}" \
     PENINSULA_DEFINITIONS_DIR="${DEFINITIONS_DIR:-}" \
     GIT_CONFIG_GLOBAL=/dev/null \
