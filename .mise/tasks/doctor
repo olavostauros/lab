@@ -1,79 +1,239 @@
 #!/usr/bin/env bash
-#MISE description="Check local development setup"
-#USAGE example "mise run doctor" header="Check tools, generated files, lints, and local hook state"
+#MISE description="Check a lab against the framework's invariants"
+#USAGE flag "--lab <path>" help="The lab directory; defaults to the current directory"
+#USAGE example "cd ~/example && lab doctor" header="Check the lab in the current directory"
+#USAGE example "lab doctor --lab ~/example" header="Check a lab from anywhere"
 set -euo pipefail
 
-REPO_DIR="$MISE_CONFIG_ROOT"
-codebase_command="${CODEBASE:-codebase}"
-SEP='|'
-failures=0
-rows=()
-details=()
+source "$MISE_CONFIG_ROOT/lib/lab.sh"
 
-add_row() {
-  rows+=("$1${SEP}$2${SEP}$3")
-}
+LAB="$(lab_root "${usage_lab:-.}")"
+WORK="$(lab_work_dir "$LAB")"
+FAILS=0
 
-add_detail() {
-  details+=("$1")
-}
+ok()   { say "ok:   $*"; }
+warn() { say "warn: $*"; }
+fail() { say "fail: $*"; FAILS=$((FAILS + 1)); }
+note() { say "note: $*"; }
 
-fail_check() {
-  local name="$1"
-  local message="$2"
-  local output="${3:-}"
-  add_row "$name" "✗" "$message"
-  if [ -n "$output" ]; then
-    add_detail "$name failed output:${output//$'\n'/$'\n  '}"
-  fi
-  failures=$((failures + 1))
-}
+say "lab: $(display_path "$LAB")"
+say "work:  $(display_path "$WORK")"
+say ""
 
-if command -v readme >/dev/null 2>&1; then
-  if readme_output=$(cd "$REPO_DIR" && readme build --check 2>&1); then
-    add_row "README" "✓" "README.md is generated from README.tsx"
-  else
-    fail_check "README" "README.md is stale; run readme build" "$readme_output"
-  fi
+version="$(bash_version)"
+if version_at_least "$version" 4; then ok "bash $version"; else fail "bash $version: lab needs bash 4 or newer first on PATH"; fi
+version="$(git_version)"
+if version_at_least "$version" 2.28; then ok "git $version"; else fail "git $version: lab init needs git 2.28 or newer for git init -b"; fi
+for key in name email; do
+  if git_identity "$WORK" "$key"; then ok "git user.$key"; else fail "git user.$key is unset, so lab init cannot commit → git config --global user.$key '…'"; fi
+done
+if command -v mise >/dev/null 2>&1; then ok "mise on PATH"; else fail "mise is not on PATH, and every lab command runs through it → put the directory holding mise on PATH"; fi
+if [ -n "${LAB_CALLER_PWD:-}" ]; then
+  if command -v jq >/dev/null 2>&1; then ok "jq on PATH"; else warn "jq is not on PATH: without it the lab shim runs 'lab agent add' as 'mise run agent add' → install jq"; fi
+fi
+if on_path "$HOME/.local/bin"; then ok "$(display_path "$HOME/.local/bin") on PATH"; else warn "$(display_path "$HOME/.local/bin") is not on PATH, and shiv and mise install there → export PATH=\"\$HOME/.local/bin:\$PATH\""; fi
+recorded="$(lab_framework_version "$LAB")"
+running="$(framework_version)"
+if [ -z "$recorded" ]; then note "framework: the README records no framework version (this tool is $running)"
+elif [ "$recorded" = "$running" ]; then ok "framework: made at $recorded, this tool's version"
+else note "framework: made at $recorded; this tool is $running"
+fi
+say ""
+
+for f in AGENTS.md README.md mise.toml .agents/roster.tsv .agents/notes/work-queue.md .agents/notes/lab-backlog.md \
+         .agents/hooks/agent-identity .agents/tasks/welcome .agents/tasks/test .agents/tasks/agent-env .agents/tasks/install-hooks \
+         .agents/test/agent_env.bats .agents/test/agent_identity.bats .agents/test/roster.bats; do
+  if [ -f "$LAB/$f" ]; then ok "$f"; else fail "$f missing"; fi
+done
+
+for f in .agents/hooks/agent-identity .agents/tasks/welcome .agents/tasks/test .agents/tasks/agent-env .agents/tasks/install-hooks; do
+  [ -f "$LAB/$f" ] && [ ! -x "$LAB/$f" ] && fail "$f is not executable"
+done
+
+drift_tmp="$(mktemp -d)"
+for f in .agents/hooks/agent-identity .agents/tasks/welcome .agents/tasks/test .agents/tasks/agent-env .agents/tasks/install-hooks \
+         .agents/test/agent_env.bats .agents/test/agent_identity.bats .agents/test/roster.bats; do
+  [ -f "$LAB/$f" ] || continue
+  render "$LAB_SCAFFOLD/lab/$f" "$drift_tmp/$f" \
+    "LAB_NAME=$(lab_name "$LAB")" "LAB_UPPER=$(upper_env "$(lab_name "$LAB")")"
+  cmp -s "$LAB/$f" "$drift_tmp/$f" || note "$f differs from the scaffold's render — an owner edit or an older framework"
+done
+rm -rf "$drift_tmp"
+
+if grep -q 'LAB_NAME' "$LAB/mise.toml" 2>/dev/null; then
+  ok "mise.toml carries the lab env"
 else
-  fail_check "README" "readme command not found; run mise install"
+  fail "mise.toml lacks the LAB_* env — merge the lab's [env] block and task_config.includes = [\".agents/tasks\"] into it"
 fi
 
-if command -v "$codebase_command" >/dev/null 2>&1; then
-  if lint_output=$(cd "$REPO_DIR" && "$codebase_command" lint "$REPO_DIR" 2>&1); then
-    add_row "codebase" "✓" "configured convention lints pass"
-  else
-    fail_check "codebase" "configured convention lints failed" "$lint_output"
-  fi
+for marker in "<!-- lab:roster -->" "<!-- lab:read-first -->"; do
+  if grep -qxF "$marker" "$LAB/AGENTS.md" 2>/dev/null; then ok "marker $marker"; else fail "AGENTS.md lacks marker $marker"; fi
+done
 
-  if git -C "$REPO_DIR" rev-parse --git-dir >/dev/null 2>&1; then
-    if (cd "$REPO_DIR" && "$codebase_command" pre-commit --check >/dev/null 2>&1); then
-      add_row "pre-commit" "✓" "codebase pre-commit hook is installed"
+for heading in "### The tiers — canonical list" "### The loosenings — canonical list" "#### The two-key rule"; do
+  if grep -qxF "$heading" "$LAB/AGENTS.md" 2>/dev/null; then ok "section $heading"; else fail "AGENTS.md lacks section: $heading"; fi
+done
+
+hooks_dir="$(git -C "$WORK" rev-parse --git-path hooks 2>/dev/null)" || hooks_dir=""
+case "$hooks_dir" in
+  "")  fail "work tree is not a git repository: $(display_path "$WORK")" ;;
+  /*)  ;;
+  *)   hooks_dir="$WORK/$hooks_dir" ;;
+esac
+if [ -n "$hooks_dir" ]; then
+  if [ -d "$hooks_dir/pre-commit.d" ]; then
+    hook_target="$hooks_dir/pre-commit.d/agent-identity"
+  else
+    hook_target="$hooks_dir/pre-commit"
+  fi
+  if [ -x "$hook_target" ]; then
+    if cmp -s "$hook_target" "$LAB/.agents/hooks/agent-identity"; then
+      ok "pre-commit guard installed in the work tree"
     else
-      add_row "pre-commit" "!" "optional local hook missing; run codebase pre-commit"
+      warn "pre-commit hook at $(display_path "$hook_target") is not this lab's guard → mise run install-hooks"
     fi
   else
-    add_row "pre-commit" "!" "not a git checkout; hook check skipped"
+    warn "pre-commit guard not installed → mise run install-hooks"
   fi
+fi
+
+notes_rel="$(notes_dir_rel "$LAB" "$WORK")"
+if git -C "$WORK" check-attr filter -- "$notes_rel/queue.md" 2>/dev/null | grep -q 'git-crypt'; then
+  ok "$notes_rel encrypts at rest"
+  git_crypt_dir="$(git -C "$WORK" rev-parse --git-path git-crypt 2>/dev/null)" || git_crypt_dir=""
+  case "$git_crypt_dir" in /*) ;; ?*) git_crypt_dir="$WORK/$git_crypt_dir" ;; esac
+  [ -d "$git_crypt_dir" ] || warn "no git-crypt key under .git — $notes_rel stays opaque until the owner unlocks"
 else
-  fail_check "codebase" "codebase command not found; run mise install"
-  add_row "pre-commit" "!" "codebase unavailable; hook check skipped"
+  warn "$notes_rel is not encrypted → cd $(display_path "$LAB") && mise install && mise exec -- notes setup --yes --dir $notes_rel, then mise run install-hooks"
 fi
 
-if command -v gum >/dev/null 2>&1; then
-  printf '%s\n' ${rows[@]+"${rows[@]}"} | gum table -s "$SEP" -c "CHECK,STATUS,DETAIL" -p --border normal
+if [ -d "$WORK/notes" ]; then
+  ok "notes/ at the work root: the product's written memory"
 else
-  for row in ${rows[@]+"${rows[@]}"}; do
-    IFS="$SEP" read -r name status message <<< "$row"
-    echo "$status $name - $message"
-  done
+  warn "no notes/ at the work root — the product's written memory lives there, docs under notes/docs/ → mkdir -p $(display_path "$WORK")/notes/docs"
+fi
+if [ -d "$WORK/docs" ] && [ ! -d "$WORK/notes/docs" ]; then
+  warn "docs/ at the work root is the older layout — product docs live under notes/docs/ → mkdir -p $(display_path "$WORK")/notes && git -C $(display_path "$WORK") mv docs notes/"
 fi
 
-if [ ${#details[@]} -gt 0 ]; then
-  echo ""
-  for detail in ${details[@]+"${details[@]}"}; do
-    printf '%s\n' "$detail"
-  done
+file_facts() {
+  stat -c '%u %a %h' "$1" 2>/dev/null || stat -f '%u %Lp %l' "$1"
+}
+
+dir_facts() {
+  stat -L -c '%u %a' "$1" 2>/dev/null || stat -L -f '%u %Lp' "$1"
+}
+
+private_file() {
+  local agent="$1" file="$2" shown uid mode links
+  shown="$(display_path "$file")"
+  if [ -L "$file" ] || [ ! -f "$file" ]; then fail "$agent: $shown is not a regular file, and secrets refuses a symlink → replace it with the file itself"; return 1; fi
+  read -r uid mode links <<< "$(file_facts "$file")"
+  if [ "$uid" != "$(id -u)" ]; then fail "$agent: $shown is not owned by you → chown $(id -un) $shown"; return 1; fi
+  if [ "$links" -ne 1 ]; then fail "$agent: $shown has $links links, and secrets refuses more than one → cp it and rm the original"; return 1; fi
+  if (( 8#$mode & 8#077 )); then fail "$agent: $shown is readable by others (mode $mode) → chmod 600 $shown"; return 1; fi
+}
+
+credentials() {
+  local agent="$1" dir="$2" identity="$2/identity.txt" vault="$2/vault.enc.yaml" uid mode recipient sound=1 tools=1
+  read -r uid mode <<< "$(dir_facts "$dir")"
+  if [ "$uid" != "$(id -u)" ]; then fail "$agent: $(display_path "$dir") is not owned by you → chown $(id -un) $(display_path "$dir")"; sound=0
+  elif (( 8#$mode & 8#022 )); then fail "$agent: $(display_path "$dir") is writable by others (mode $mode) → chmod 700 $(display_path "$dir")"; sound=0
+  fi
+  private_file "$agent" "$identity" || sound=0
+  if [ "$(grep -cvE '^(#|$)' "$identity")" -ne 1 ] || ! grep -qxE 'AGE-SECRET-KEY-1[0-9A-Z]{58}' "$identity"; then
+    fail "$agent: $(display_path "$identity") must hold exactly one AGE-SECRET-KEY-1… line → the owner mints one with age-keygen -o $(display_path "$identity")"; sound=0
+  fi
+  recipient="$(awk '/^# public key: / { print $4; exit }' "$identity")"
+  [[ "$recipient" =~ ^age1[0-9a-z]{58}$ ]] || { fail "$agent: $(display_path "$identity") has no '# public key: age1…' line, which agent-env reads for the recipient → age-keygen writes one"; sound=0; }
+  [ ! -e "$vault" ] || private_file "$agent" "$vault" || sound=0
+  if [ "$sound" -eq 1 ] && [ -e "$vault" ] && ! grep -qE "recipient: $recipient$" "$vault"; then
+    fail "$agent: $(display_path "$vault") is encrypted to a different recipient than the public-key line of $(display_path "$identity") → age-keygen -y $(display_path "$identity") prints the right one"; sound=0
+  fi
+  [ "$sound" -eq 1 ] || return 0
+  ok "$agent: credentials at $(display_path "$dir") (sops)"
+  command -v secrets >/dev/null 2>&1 || { tools=0; warn "$agent: secrets is not on PATH, and agent-env points it at this vault → shiv install secrets"; }
+  command -v sops >/dev/null 2>&1 || { tools=0; warn "$agent: sops is not on PATH, and secrets decrypts the vault through it → mise use sops in $(display_path "$LAB")"; }
+  if [ ! -e "$vault" ]; then
+    note "$agent: no vault yet at $(display_path "$vault"); the first secrets set creates it"
+  elif [ "$tools" -eq 0 ]; then
+    note "$agent: round trip skipped; secrets list needs both tools on PATH"
+  elif env SECRETS_PROVIDER=sops SECRETS_SOPS_FILE="$vault" SECRETS_SOPS_AGE_KEY_FILE="$identity" SECRETS_SOPS_RECIPIENT="$recipient" \
+         secrets list --prefix "$agent/" >/dev/null 2>&1; then
+    ok "$agent: secrets opens the vault with this identity"
+  else
+    fail "$agent: secrets cannot open the vault with this identity → eval \"\$(mise run -q agent-env $agent)\" in the lab, then secrets list --prefix $agent/ says why"
+  fi
+}
+
+count=0
+keepers=0
+agents_text="$(roster_agents "$LAB")"
+while IFS= read -r agent; do
+  [ -n "$agent" ] || continue
+  count=$((count + 1))
+  kind="$(roster_kind "$LAB" "$agent")"
+  home="$(agent_workspace "$LAB" "$agent" "$kind")/home"
+  if [ "$kind" = steward ]; then
+    keepers=$((keepers + 1))
+    [ "$agent" = "$STEWARD" ] || fail "$agent: a steward must be named $STEWARD"
+  fi
+  if [ -f "$LAB/.agents/notes/$agent.md" ]; then ok "$agent: .agents/notes/$agent.md"; else fail "$agent: .agents/notes/$agent.md missing"; fi
+  if grep -q "^- \*\*$agent\*\* — " "$LAB/AGENTS.md"; then ok "$agent: on the roster in AGENTS.md"; else fail "$agent: not listed under 'Who lives here' in AGENTS.md"; fi
+  if [ -f "$home/AGENTS.md" ]; then ok "$agent: home at $(display_path "$home")"; else warn "$agent: no home at $(display_path "$home") → lab agent home $agent"; fi
+  secrets_dir="$(agent_secrets_dir "$LAB" "$agent" "$kind")"
+  if [ -f "$secrets_dir/identity.txt" ]; then
+    if [ "$kind" = steward ]; then
+      fail "$agent: has $(display_path "$secrets_dir")/identity.txt; a steward has no account, ever → move or delete it"
+    else
+      credentials "$agent" "$secrets_dir"
+    fi
+  fi
+done <<< "$agents_text"
+[ "$count" -gt 0 ] || warn "roster is empty → lab agent add <name> --role <role>"
+[ "$keepers" -le 1 ] || fail "roster lists $keepers stewards; a lab has exactly one"
+[ "$keepers" -eq 1 ] || warn "no steward → lab agent add $STEWARD"
+
+if [ -d "$LAB/.agents/home" ]; then
+  case "$LAB" in
+    "$WORK")   rel=".agents/home" ;;
+    "$WORK"/*) rel="${LAB#"$WORK"/}/.agents/home" ;;
+    *)         rel="" ;;
+  esac
+  if [ -n "$rel" ] && ! git -C "$WORK" check-ignore -q "$rel" 2>/dev/null; then
+    warn ".agents/home/ is not git-ignored, and agent homes live there → add it to .gitignore"
+  fi
 fi
 
-exit "$failures"
+say ""
+leftovers=0
+hits() {
+  grep -rn "$@" --exclude-dir=.git -- "$LAB" 2>/dev/null || return 0
+}
+report() {
+  local kind="$1" line file rest
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    file="${line%%:*}"
+    rest="${line#*:}"
+    case "$file" in "$LAB"/*) file="${file#"$LAB"/}" ;; *) file="$(display_path "$file")" ;; esac
+    fail "$kind: $file:$rest"
+    leftovers=$((leftovers + 1))
+  done
+}
+report placeholder <<< "$(hits -oE '\{\{[A-Z_]+\}\}')"
+lineage="$(lineage_names "$LAB" | paste -sd '|')"
+report lineage <<< "$(hits -iwE "$lineage")"
+report lineage <<< "$(hits -iwE 'KnickKnackLabs|Knick Knack Labs' --exclude=mise.toml)"
+if [ "$leftovers" -eq 0 ]; then
+  ok "nothing here is the framework's: no {{placeholder}}, no lineage name"
+fi
+
+say ""
+if [ "$FAILS" -eq 0 ]; then
+  say "doctor: healthy"
+else
+  say "doctor: $FAILS failing"
+  [ "$leftovers" -eq 0 ] || say "next: each placeholder: and lineage: line is the owner's to fix in the text around it"
+  exit 1
+fi

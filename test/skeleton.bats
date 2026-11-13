@@ -38,30 +38,11 @@ load test_helper
   [ "$status" -eq 0 ]
 }
 
-@test "doctor reports optional pre-commit hook state" {
+@test "doctor is the product's lab check: the tool repo itself is not a lab" {
+  require_lab_tasks doctor
   run lab doctor
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"pre-commit"* ]]
-}
-
-@test "doctor uses the selected Codebase for both lint and hook checks" {
-  local selected="$BATS_TEST_TMPDIR/selected-codebase"
-  local calls="$BATS_TEST_TMPDIR/codebase-calls"
-  cat > "$selected" <<'BASH'
-#!/usr/bin/env bash
-set -eu
-printf '%s\n' "$*" >> "$CODEBASE_CALLS"
-if [ "$1" = pre-commit ]; then exit 1; fi
-BASH
-  chmod +x "$selected"
-
-  CODEBASE="$selected" CODEBASE_CALLS="$calls" run lab doctor
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"optional local hook missing"* ]]
-  run grep -x -F "lint $REPO_DIR" "$calls"
-  [ "$status" -eq 0 ]
-  run grep -x -F 'pre-commit --check' "$calls"
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"not a lab"* ]]
 }
 
 @test "public tasks provide examples through their real help" {
