@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+#MISE description="Scaffold a lab: contract, roster, queue, style, guard, steward and tasks"
+#USAGE arg "<name>" help="Lab name, lowercase (for example: example)"
+#USAGE flag "--at <path>" help="Where to create it; embedded defaults to the repo root, else ./<name>"
+#USAGE flag "--embedded" help="The lab lives inside an existing project repo, not a repo of its own"
+#USAGE flag "--project <project>" help="What the lab works on; defaults to the parent repo's name when embedded, else the lab name"
+#USAGE flag "--owner <owner>" help="The owner's name as it appears in the contract; defaults to git user.name, and is required when that is unset"
+#USAGE flag "--no-commit" help="Leave the generated files uncommitted"
+#USAGE example "cd ~/project && lab init example --embedded" header="A lab at the root of the project it works on"
+#USAGE example "lab init example --at ~/example --owner 'Your Name'" header="A standalone lab that works on other repos"
+set -euo pipefail
+
+source "$MISE_CONFIG_ROOT/lib/lab.sh"
+
+NAME="${usage_name:?a lab name is required}"
+validate_name "lab name" "$NAME"
+UPPER="$(upper_env "$NAME")"
+EMBEDDED="${usage_embedded:-false}"
+
+OWNER="${usage_owner:-$(git config user.name 2>/dev/null || true)}"  # codebase:ignore or-true — user.name may be unset; the next line names the remedy
+[ -n "$OWNER" ] || die "the owner has no name: pass --owner '<name>', or set git config user.name"
+
+AUTHOR_DOMAIN="$NAME.invalid"
+
+if [ "$EMBEDDED" = "true" ]; then
+  if [ -n "${usage_at:-}" ]; then
+    TARGET="$(canonical_path "$(resolve_path "$usage_at")")"
+  else
+    TARGET="$(git -C "$(caller_pwd)" rev-parse --show-toplevel 2>/dev/null || true)"  # codebase:ignore or-true — outside a repo is the case the next line rejects
+    [ -n "$TARGET" ] || die "--embedded needs a directory inside a git repository"
+  fi
+  WORK="$(git -C "$TARGET" rev-parse --show-toplevel 2>/dev/null || true)"  # codebase:ignore or-true — --at outside a repo is the case the next line rejects
+  [ -n "$WORK" ] || die "--embedded needs $TARGET to be inside a git repository"
+  PROJECT="${usage_project:-$(basename "$WORK")}"
+  prefix="$(git -C "$TARGET" rev-parse --show-prefix)"
+  WORK_DIR_EXPR='{{ config_root }}'
+  for _ in $(seq "$(printf '%s' "$prefix" | tr -cd '/' | wc -c)"); do
+    WORK_DIR_EXPR="$WORK_DIR_EXPR/.."
+  done
+  if [ "$TARGET" = "$WORK" ]; then what="the root"; else what="a directory"; fi
+  PLACEMENT="This lab lives **inside** the project it works on: \`$(display_path "$TARGET")\` is $what of the \`$PROJECT\` repo, not a repo of its own. Home and work share one git history, so the rules below bind both."
+else
+  TARGET="$(canonical_path "$(resolve_path "${usage_at:-$NAME}")")"
+  WORK="$TARGET"
+  PROJECT="${usage_project:-$NAME}"
+  WORK_DIR_EXPR='{{ config_root }}'
+  PLACEMENT="This lab is a repository of its own. The work happens in other repositories, cloned into each agent's workspace; the lab is where the rules, the queue and the record of that work are kept."
+fi
+
+VARS=(
+  "LAB_NAME=$NAME"
+  "LAB_UPPER=$UPPER"
+  "LAB_PATH=$(display_path "$TARGET")"
+  "WORK_PATH=$(display_path "$WORK")"
+  "WORK_DIR_EXPR=$WORK_DIR_EXPR"
+  "PROJECT=$PROJECT"
+  "CREATED=$(today)"
+  "AUTHOR_DOMAIN=$AUTHOR_DOMAIN"
+  "PLACEMENT=$PLACEMENT"
+  "OWNER=$OWNER"
+  "FRAMEWORK_VERSION=$(framework_version)"
+)
+
+NEW_REPO=false
+if [ "$EMBEDDED" != "true" ] && [ ! -d "$TARGET/.git" ]; then
+  git -C "$TARGET" init -q -b main
+  say "init: git repo at $(display_path "$TARGET")"
+  NEW_REPO=true
+fi
+
+kept_agents='' kept_mise='' kept_gitignore=''
+[ -e "$TARGET/AGENTS.md" ] && kept_agents=1
+[ -e "$TARGET/mise.toml" ] && kept_mise=1
+[ -e "$TARGET/.gitignore" ] && kept_gitignore=1
+[ "$NEW_REPO" = "true" ] && PREEXISTING="$(git -C "$TARGET" status --porcelain)" || PREEXISTING=x
+
+install_tree "$LAB_SCAFFOLD/lab" "$TARGET" "${VARS[@]+"${VARS[@]}"}"
+install_tree "$LAB_SCAFFOLD/work" "$WORK" "${VARS[@]+"${VARS[@]}"}"
+if [ "$TARGET" != "$WORK" ]; then
+  say "note: notes/ sits at the work root $(display_path "$WORK"), outside the lab"
+fi
+if [ -d "$WORK/docs" ] && [ ! -d "$WORK/notes/docs" ]; then
+  say "note: docs/ at the work root is the older layout — product docs live under notes/docs/ → git -C $(display_path "$WORK") mv docs notes/"
+fi
+
+mise trust "$TARGET/mise.toml" >/dev/null
+
+add_agent "$TARGET" "$STEWARD" stewardship "" ""
+
+# .agents/notes encrypts at rest before anything lands in history: notes
+# wires git-crypt (provided by rudi) for the lab's notes dir. PATH tools win;
+# the lab's own pins in mise.toml cover a machine that only has mise.
+notes_dir="$(notes_dir_rel "$TARGET" "$WORK")"
+if git -C "$WORK" check-attr filter -- "$notes_dir/queue.md" 2>/dev/null | grep -q 'git-crypt'; then
+  say "keep: $notes_dir already encrypts at rest"
+else
+  (
+    cd "$TARGET"
+    export PATH="$HOME/.local/bin:$PATH"
+    unset MISE_CONFIG_ROOT
+    if command -v notes >/dev/null 2>&1 && command -v rudi >/dev/null 2>&1 && command -v git-crypt >/dev/null 2>&1; then
+      notes setup --yes --dir "$notes_dir"
+    else
+      mise install --yes
+      command -v git-crypt >/dev/null 2>&1 || mise exec -- rudi install
+      mise exec -- notes setup --yes --dir "$notes_dir"
+    fi
+  ) || die "notes setup failed for $notes_dir — install the tools ahead (shiv install notes rudi; rudi install) and rerun init"
+  say "encrypt: $notes_dir — readable in this checkout, opaque in git"
+fi
+
+# The first commit lands through the notes hooks; patch them before it
+# (install-hooks does the same, and adds the guard, when the owner runs it).
+hooks_dir="$(git -C "$WORK" rev-parse --git-path hooks)"
+case "$hooks_dir" in /*) ;; *) hooks_dir="$WORK/$hooks_dir" ;; esac
+patch_notes_hooks "$hooks_dir"
+
+[ "$TARGET" = "$WORK" ] || say "note: .gitattributes and the hooks landed at the work root $(display_path "$WORK") — commit .gitattributes there"
+
+if [ "${usage_no_commit:-false}" = "true" ]; then
+  say "skip: initial commit (--no-commit)"
+elif [ -z "$PREEXISTING" ]; then
+  if signing="$(signing_describe "$TARGET")"; then
+    say "sign: the bootstrap commit is signed ($signing); a passphrase prompt that appears now is for it. --no-commit leaves the files for the owner to commit instead"
+  fi
+  git -C "$TARGET" add .
+  env "${UPPER}_OWNER_COMMIT=1" git -C "$TARGET" commit -q -m "$NAME: bootstrap the lab from lab"
+  say "commit: bootstrap the lab"
+else
+  say "next: review the new files under $(display_path "$TARGET") and commit them as the owner"
+fi
+
+[ -z "$kept_agents" ]    || say "note: AGENTS.md is pre-existing — merge in the lab markers (<!-- lab:roster -->, <!-- lab:read-first -->) and the authority sections, or doctor will fail"
+[ -z "$kept_mise" ]      || say "note: mise.toml is pre-existing — merge in the lab's [env] block and task_config.includes = [\".agents/tasks\"], or the lab's tasks will not load"
+[ -z "$kept_gitignore" ] || say "note: .gitignore is pre-existing — add .agents/home/ to it, or agent homes could be committed"
+
+say ""
+say "done: $NAME at $(display_path "$TARGET") (work tree: $(display_path "$WORK"))"
+say "next: lab agent add <name> --lab $(display_path "$TARGET") --role '<role>' [--owns <dir>/]"
+say "next: cd $(display_path "$TARGET") && mise run install-hooks && mise run welcome"

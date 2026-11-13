@@ -66,7 +66,7 @@ setup() {
 }
 
 @test "a fresh lab names no lineage, no runner and no mail domain, and keeps one line of attribution" {
-  require_lab_tasks init agent/add
+  require_lab_tasks init agent/add version
   h="$BATS_TEST_TMPDIR/hearth"
   lab init hearth --at "$h"
   lab agent add vulcan --lab "$h" --role backend --owns server/ >/dev/null

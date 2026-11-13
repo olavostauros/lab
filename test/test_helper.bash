@@ -32,10 +32,15 @@ lab_isolated() {
 }
 export -f lab_isolated
 
+# A generated lab runs serial bats — rush is the repo's pin, not the
+# lab's — so the runner env the repo's test task exports must not leak in.
 in_lab() {
   local dir="$1"
   shift
-  env GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 MISE_AUTO_INSTALL=0 mise -C "$dir" run -q "$@"
+  env -u BATS_DEFAULT_TEST_TARGET -u BATS_NUMBER_OF_PARALLEL_JOBS \
+    -u BATS_PARALLEL_BINARY_NAME \
+    GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 MISE_AUTO_INSTALL=0 \
+    mise -C "$dir" run -q "$@"
 }
 export -f in_lab
 
