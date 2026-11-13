@@ -177,7 +177,7 @@ trap 'if [ "$interrupted" -eq 0 ]; then interrupted=143; fi' TERM
 trap 'finish "$?"' EXIT
 
 # BATS/Rush owns test parallelism; the aggregate starts no competing check pool.
-run_check tests mise run suite || failed=1
+run_check tests mise run test || failed=1
 run_check lint "${CODEBASE:-codebase}" lint "$repo" || failed=1
 run_check readme "${README:-readme}" build --check || failed=1
 run_check whitespace git diff --check || failed=1

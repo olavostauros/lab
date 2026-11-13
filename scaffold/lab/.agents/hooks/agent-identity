@@ -21,7 +21,7 @@ if [ "${!owner_commit:-}" = "1" ]; then
   exit 0
 fi
 
-if [ "$(git config --bool {{LAB_NAME}}.ownerCommit 2>/dev/null)" = "true" ]; then
+if [ "$(git config --bool "{{LAB_NAME}}.ownerCommit" 2>/dev/null)" = "true" ]; then
   exit 0
 fi
 

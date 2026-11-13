@@ -172,7 +172,7 @@ These hold in every lab, and `lab doctor` checks the ones a script can:
 | `mise run agent:home` | Create the home notes of a rostered agent that lacks them                         |
 | `mise run doctor`     | Check a lab against the framework's invariants                                    |
 | `mise run init`       | Scaffold a lab: contract, roster, queue, style, guard, steward and tasks          |
-| `mise run suite`      | Run BATS tests                                                                    |
+| `mise run test`       | Run BATS tests                                                                    |
 | `mise run validate`   | Run all validation checks with compact results and private full logs              |
 | `mise run version`    | Print the framework version: the tag at HEAD, else the short commit, else unknown |
 
@@ -184,7 +184,7 @@ Every public task is also a shim command — `lab init`, `lab doctor`, `lab vers
 mise trust
 mise install
 mise run validate      # tests, codebase lint, generated-README check, whitespace
-mise run suite          # parallel BATS only, for focused runs
+mise run test          # parallel BATS only, for focused runs
 readme build           # regenerate README.md after editing README.tsx
 mise run version       # what a lab made from this checkout records
 git diff --check
@@ -195,10 +195,10 @@ The tests scaffold labs into temporary directories — homes included — and `L
 The canonical test task uses the [KKL-maintained Bats fork](https://github.com/KnickKnackLabs/bats-core) with [Rush](https://github.com/shenwei356/rush) and a measured four-job default. Isolated tests can run concurrently across separate files and within one file:
 
 ```bash
-mise run suite                         # measured four-job default
-mise run suite --jobs 4                # explicit job count
-BATS_NUMBER_OF_PARALLEL_JOBS=2 mise run suite
-mise run suite --jobs 1                # serial debugging
+mise run test                         # measured four-job default
+mise run test --jobs 4                # explicit job count
+BATS_NUMBER_OF_PARALLEL_JOBS=2 mise run test
+mise run test --jobs 1                # serial debugging
 ```
 
 Parallel suites must isolate mutable state per test and process. Use `$BATS_TEST_TMPDIR`, unique ports, and fixture-local repositories instead of shared files, services, HOME overrides, or repository mutations.

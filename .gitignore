@@ -2,7 +2,6 @@
 mise.local.toml
 
 .obsidian
-.agents/secrets/
 
 # Editor / OS noise
 .DS_Store

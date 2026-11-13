@@ -4,19 +4,6 @@ task_output = "interleave"
 experimental = true
 aqua.registries = ["https://github.com/KnickKnackLabs/bats-core"]
 
-[env]
-LAB_NAME = "lab"
-LAB_PROJECT = "lab"
-LAB_DIR = "{{ config_root }}"
-WORK_DIR = "{{ config_root }}"
-LAB_AUTHOR_DOMAIN = "lab.invalid"
-# The owner's GitHub email (the noreply address works): agent-env stamps it,
-# so commits link to that account under each agent's name; empty keeps the label.
-LAB_GH_EMAIL = ""
-
-[task_config]
-includes = [".agents/tasks", ".mise/tasks"]
-
 [plugins]
 shiv = "https://github.com/KnickKnackLabs/vfox-shiv"
 

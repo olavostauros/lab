@@ -676,7 +676,7 @@ lab doctor            # healthy`}</CodeBlock>
       <CodeBlock lang="bash">{`mise trust
 mise install
 mise run validate      # tests, codebase lint, generated-README check, whitespace
-mise run suite          # parallel BATS only, for focused runs
+mise run test          # parallel BATS only, for focused runs
 readme build           # regenerate README.md after editing README.tsx
 mise run version       # what a lab made from this checkout records
 git diff --check`}</CodeBlock>
@@ -694,10 +694,10 @@ git diff --check`}</CodeBlock>
         <Link href="https://github.com/shenwei356/rush">Rush</Link>
         {" and a measured four-job default. Isolated tests can run concurrently across separate files and within one file:"}
       </Paragraph>
-      <CodeBlock lang="bash">{`mise run suite                         # measured four-job default
-mise run suite --jobs 4                # explicit job count
-BATS_NUMBER_OF_PARALLEL_JOBS=2 mise run suite
-mise run suite --jobs 1                # serial debugging`}</CodeBlock>
+      <CodeBlock lang="bash">{`mise run test                         # measured four-job default
+mise run test --jobs 4                # explicit job count
+BATS_NUMBER_OF_PARALLEL_JOBS=2 mise run test
+mise run test --jobs 1                # serial debugging`}</CodeBlock>
       <Paragraph>
         {"Parallel suites must isolate mutable state per test and process. Use "}
         <Code>$BATS_TEST_TMPDIR</Code>
