@@ -390,3 +390,136 @@ git_identity() {
 on_path() {
   case ":$PATH:" in *":$1:"*) ;; *) return 1 ;; esac
 }
+
+# Nearest ancestor-or-self of $1 that is a lab root; rc 1 when there is none.
+lab_root_up() {
+  local d="$1"
+  while :; do
+    if [ -f "$d/.agents/roster.tsv" ] && [ -f "$d/AGENTS.md" ]; then
+      printf '%s\n' "$d"
+      return 0
+    fi
+    [ "$d" = / ] && return 1
+    d="$(dirname "$d")"
+  done
+}
+
+is_truthy() {
+  case "${1:-}" in
+    true | 1 | yes | y) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# LAB_YES/MISE_YES answer every confirmation yes — the convention notes'
+# confirm_destructive set. Guided choices (which name, which kind) still ask.
+lab_yes() {
+  is_truthy "${LAB_YES:-}" || is_truthy "${MISE_YES:-}"
+}
+
+# Answers come from $LAB_PROMPT_TTY when set, else /dev/tty when one opens,
+# else stdin — a pipe drives the same prompts without a terminal. The caller
+# opens the fd once with ask_open; subshells share its file offset, so every
+# ask reads the next line. gum renders only when the source is a real terminal.
+ask_open() {
+  [ -n "${LAB_ASK_FD:-}" ] && return 0
+  [ "${BASHPID:-$$}" = "$$" ] || return 1  # a subshell's fd would die with it — the caller must open first
+  LAB_ASK_TTY=""
+  LAB_ASK_SRC=""
+  if [ -n "${LAB_PROMPT_TTY:-}" ]; then
+    { exec {LAB_ASK_FD}<"$LAB_PROMPT_TTY"; } 2>/dev/null || return 1
+    if [ -c "$LAB_PROMPT_TTY" ]; then
+      LAB_ASK_TTY=1
+      LAB_ASK_SRC="$LAB_PROMPT_TTY"
+    fi
+  elif { exec {LAB_ASK_FD}</dev/tty; } 2>/dev/null; then
+    LAB_ASK_TTY=1
+    LAB_ASK_SRC=/dev/tty
+  else
+    exec {LAB_ASK_FD}<&0
+  fi
+}
+
+ask_have_gum() {
+  [ -n "$LAB_ASK_TTY" ] && command -v gum >/dev/null 2>&1
+}
+
+ask_read() {
+  IFS= read -r -u "$LAB_ASK_FD" "$1"
+}
+
+ask_input() {
+  local prompt="$1" default="${2:-}" answer rc=0
+  ask_open || return 1
+  if ask_have_gum; then
+    # A terminal device intentionally carries prompt input and output.
+    # shellcheck disable=SC2094
+    answer="$(gum input --prompt "$prompt " --placeholder "$default" <"$LAB_ASK_SRC" 2>"$LAB_ASK_SRC")" || return 1
+  else
+    printf '%s%s: ' "$prompt" "${default:+ [$default]}" >&2
+    ask_read answer || rc=$?
+    { [ "$rc" -eq 0 ] || [ -n "$answer" ]; } || return 1
+  fi
+  printf '%s\n' "${answer:-$default}"
+}
+
+ask_choice() {
+  local prompt="$1" opt answer i
+  shift
+  ask_open || return 1
+  if ask_have_gum; then
+    # A terminal device intentionally carries prompt input and output.
+    # shellcheck disable=SC2094
+    gum choose --header "$prompt" "$@" <"$LAB_ASK_SRC" 2>"$LAB_ASK_SRC"
+    return
+  fi
+  printf '%s\n' "$prompt" >&2
+  i=1
+  for opt in "$@"; do
+    printf '  %d) %s\n' "$i" "$opt" >&2
+    i=$((i + 1))
+  done
+  while :; do
+    printf '> ' >&2
+    ask_read answer || return 1
+    case "$answer" in
+      "") continue ;;
+      *[!0-9]*)
+        for opt in "$@"; do
+          [ "$answer" = "$opt" ] && { printf '%s\n' "$opt"; return 0; }
+        done
+        ;;
+      *)
+        i=1
+        for opt in "$@"; do
+          [ "$i" -eq "$answer" ] && { printf '%s\n' "$opt"; return 0; }
+          i=$((i + 1))
+        done
+        ;;
+    esac
+    printf 'choose 1-%d\n' "$#" >&2
+  done
+}
+
+ask_confirm() {
+  local prompt="$1" default="${2:-y}" answer
+  ask_open || return 1
+  if ask_have_gum; then
+    local go=true
+    [ "$default" = n ] && go=false
+    # A terminal device intentionally carries prompt input, output, and errors.
+    # shellcheck disable=SC2094
+    gum confirm --default="$go" "$prompt" <"$LAB_ASK_SRC" >"$LAB_ASK_SRC" 2>"$LAB_ASK_SRC"
+    return
+  fi
+  local hint='[y/N]'
+  [ "$default" = y ] && hint='[Y/n]'
+  while :; do
+    printf '%s %s ' "$prompt" "$hint" >&2
+    ask_read answer || return 1
+    case "${answer:-$default}" in
+      y | Y | yes | YES) return 0 ;;
+      n | N | no | NO) return 1 ;;
+    esac
+  done
+}

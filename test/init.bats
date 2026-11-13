@@ -336,3 +336,95 @@ setup() {
   run in_lab "$h" install-hooks
   [ "$(grep -c -- '--dir' "$h/.git/hooks/pre-commit.d/obfuscation")" -eq 1 ]
 }
+
+@test "init with no name asks for the facts and scaffolds a standalone lab" {
+  require_lab_tasks init
+  answers="$BATS_TEST_TMPDIR/answers"
+  printf '%s\n' \
+    "BAD NAME" \
+    "hearth" \
+    "$BATS_TEST_TMPDIR/hearth" \
+    "" \
+    "" \
+    "y" \
+    "n" "n" "n" "n" > "$answers"
+  CALLER="$BATS_TEST_TMPDIR/caller" LAB_PROMPT_TTY="$answers" run lab init
+  assert_success
+  assert_output_contains "commit: bootstrap the lab"
+  assert_output_contains "done: hearth at"
+  [ -f "$BATS_TEST_TMPDIR/hearth/.agents/roster.tsv" ]
+}
+
+@test "init with no name asks, scaffolds an embedded lab and puts an agent on the roster" {
+  require_lab_tasks init
+  project="$(make_project)"
+  answers="$BATS_TEST_TMPDIR/answers"
+  printf '%s\n' \
+    "1" \
+    "" \
+    "" \
+    "" \
+    "" \
+    "y" \
+    "y" \
+    "vulcan" \
+    "1" \
+    "src/" \
+    "implementation" \
+    "" \
+    "n" \
+    "n" "n" "n" > "$answers"
+  CALLER="$project" LAB_PROMPT_TTY="$answers" run lab init
+  assert_success
+  [ -f "$project/AGENTS.md" ]
+  assert_file_contains "$project/.agents/roster.tsv" "vulcan"
+  [ -f "$project/.agents/notes/vulcan.md" ]
+}
+
+@test "init with no name honors flags already given in guided mode" {
+  require_lab_tasks init
+  project="$(make_project)"
+  answers="$BATS_TEST_TMPDIR/answers"
+  printf '%s\n' \
+    "" \
+    "" \
+    "" \
+    "" \
+    "y" \
+    "n" "n" "n" "n" > "$answers"
+  CALLER="$project" LAB_PROMPT_TTY="$answers" run lab init --embedded
+  assert_success
+  [ -f "$project/.agents/roster.tsv" ]
+  assert_file_contains "$project/AGENTS.md" "inside"
+}
+
+@test "init with no name writes nothing when the owner declines" {
+  require_lab_tasks init
+  answers="$BATS_TEST_TMPDIR/answers"
+  printf '%s\n' \
+    "hearth" \
+    "$BATS_TEST_TMPDIR/hearth" \
+    "" \
+    "" \
+    "n" > "$answers"
+  CALLER="$BATS_TEST_TMPDIR/caller" LAB_PROMPT_TTY="$answers" run lab init
+  assert_failure
+  assert_output_contains "nothing written"
+  [ ! -e "$BATS_TEST_TMPDIR/hearth" ]
+}
+
+@test "init with no name and nothing to ask explains itself" {
+  require_lab_tasks init
+  : > "$BATS_TEST_TMPDIR/answers"
+  CALLER="$BATS_TEST_TMPDIR/caller" LAB_PROMPT_TTY="$BATS_TEST_TMPDIR/answers" run lab init
+  assert_failure
+  assert_output_contains "it needs a terminal, or answers on stdin"
+}
+
+@test "init with no name inside a lab points at it instead of nesting" {
+  require_lab_tasks init
+  lab init hearth --at "$BATS_TEST_TMPDIR/hearth"
+  CALLER="$BATS_TEST_TMPDIR/hearth" run lab init
+  assert_success
+  assert_output_contains "already the hearth lab"
+}

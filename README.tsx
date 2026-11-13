@@ -363,6 +363,11 @@ cd lab && mise trust && mise install`}</CodeBlock>
     </Section>
 
     <Section title="Quick start">
+      <Paragraph>
+        {"Run "}
+        <Code>lab init</Code>
+        {" with no name and it asks for each fact it needs — where the lab lives, its name, its owner — scaffolds, then offers the roster, the hooks and a first check. Given a name it asks nothing: the flags are the same facts, and CI never sees a prompt."}
+      </Paragraph>
       <CodeBlock lang="bash">{`# A lab inside the project it works on — AGENTS.md + .agents/ at the repo root
 cd ~/project && lab init example --embedded
 
