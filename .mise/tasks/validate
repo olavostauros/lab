@@ -1,0 +1,185 @@
+#!/usr/bin/env bash
+#MISE description="Run all validation checks with compact results and private full logs"
+#MISE dir="{{config_root}}"
+#USAGE flag "--verbose" default=#false help="Print full check logs, including passing output"
+#USAGE example "mise run validate" header="Run the complete local gate with compact output"
+#USAGE example "mise run validate --verbose" header="Retain full output in an ephemeral CI job log"
+#USAGE example "BATS_NUMBER_OF_PARALLEL_JOBS=1 mise run validate" header="Also serialize the BATS test suite"
+set -euo pipefail
+
+repo="${MISE_CONFIG_ROOT:?mise must select the repository}"
+cd "$repo"
+umask 077
+log_dir=$(mktemp -d "${TMPDIR:-/tmp}/lab-validation.XXXXXX")
+started=$SECONDS
+failed=0
+lifecycle_error=0
+interrupted=0
+finished=false
+active_name=""
+active_pid=""
+active_started=0
+active_state=idle
+
+write_result() {
+  local name="$1" state="$2" code="$3" elapsed="$4" group="$5"
+  printf '%s\t%s\t%s\t%s\n' "$state" "$code" "$elapsed" "$group" > "$log_dir/$name.result.next" || return 1
+  mv "$log_dir/$name.result.next" "$log_dir/$name.result"
+}
+
+write_report() {
+  local state="$1" code="$2" name
+  printf 'check\tstatus\texit_code\tseconds\tprocess_group\n' > "$log_dir/report.tsv.next" || return 1
+  for name in ${checks[@]+"${checks[@]}"}; do
+    printf '%s\t' "$name" >> "$log_dir/report.tsv.next" || return 1
+    cat "$log_dir/$name.result" >> "$log_dir/report.tsv.next" || return 1
+  done
+  printf 'run\t%s\t%s\t%s\t-\n' "$state" "$code" "$((SECONDS - started))" >> "$log_dir/report.tsv.next" || return 1
+  mv "$log_dir/report.tsv.next" "$log_dir/report.tsv"
+}
+
+signal_group() {
+  local signal="$1" group="$2" detail
+  if detail=$(LC_ALL=C kill "-$signal" -- "-$group" 2>&1); then
+    return 0
+  fi
+  # Bash does not expose errno. Only its C-locale ESRCH diagnostic means gone;
+  # permission errors and all other unexpected failures remain unsuccessful.
+  if [[ "$detail" == *"No such process"* ]]; then
+    return 0
+  fi
+  printf 'Cannot send %s to group %s: %s\n' "$signal" "$group" "$detail" >&2
+  printf 'signal=%s group=%s error=%s\n' "$signal" "$group" "$detail" >> "$log_dir/lifecycle.log"
+  return 1
+}
+
+stop_group() {
+  local group="$1" graceful="$2" result=0
+  if [ "$graceful" = true ]; then
+    if ! signal_group TERM "$group"; then result=1; fi
+    if ! sleep 1; then result=1; fi
+  fi
+  if ! signal_group KILL "$group"; then result=1; fi
+  return "$result"
+}
+
+# shellcheck disable=SC2329 # Invoked by the EXIT trap below.
+finish() {
+  local code="$1" state=ERROR group child_code
+  trap - EXIT
+  trap '' INT TERM
+  group="$active_pid"
+  if [ "$active_state" != idle ] && [ -n "$group" ]; then
+    if stop_group "$group" true; then
+      if wait "$group"; then child_code=0; else child_code=$?; fi
+      if ! printf 'reaped_group=%s exit=%s\n' "$group" "$child_code" >> "$log_dir/lifecycle.log"; then
+        lifecycle_error=1
+      fi
+    else
+      lifecycle_error=1
+      printf 'Cleanup uncertain; inspect group %s and logs: %s\n' "$group" "$log_dir" >&2
+    fi
+    if [ "$active_state" = running ]; then
+      if [ "$interrupted" -ne 0 ]; then state=INTERRUPTED; fi
+      if ! write_result "$active_name" "$state" - "$((SECONDS - active_started))" "$group"; then
+        lifecycle_error=1
+      fi
+    fi
+  fi
+  if [ "$lifecycle_error" -ne 0 ]; then
+    state=ERROR
+    code=1
+  elif [ "$interrupted" -ne 0 ]; then
+    state=INTERRUPTED
+    code="$interrupted"
+  elif [ "$finished" = true ]; then
+    if [ "$code" -eq 0 ]; then state=PASS; else state=FAIL; fi
+  else
+    code=1
+  fi
+  # Only this finalizer publishes a terminal whole-run result, after cleanup.
+  if ! write_report "$state" "$code"; then
+    printf 'ERROR: could not publish final report in %s\n' "$log_dir" >&2
+    exit 1
+  fi
+  printf '%s: %ss; report: %s/report.tsv\n' "$state" "$((SECONDS - started))" "$log_dir"
+  exit "$code"
+}
+
+fail_run() {
+  lifecycle_error=1
+  printf 'ERROR: %s; logs: %s\n' "$1" "$log_dir" >&2
+  exit 1
+}
+
+run_check() {
+  local name="$1" code state elapsed
+  shift
+  if [ "$interrupted" -ne 0 ]; then exit "$interrupted"; fi
+  active_name="$name"
+  active_pid=""
+  active_started=$SECONDS
+  printf '%q ' "$@" > "$log_dir/$name.command" || fail_run "Cannot record command: $name"
+  printf '\n' >> "$log_dir/$name.command" || fail_run "Cannot record command: $name"
+  if [ "$interrupted" -ne 0 ]; then exit "$interrupted"; fi
+  "$@" < /dev/null > "$log_dir/$name.log" 2>&1 &
+  active_pid=$!
+  active_state=running
+  if ! write_result "$name" RUNNING - 0 "$active_pid"; then
+    lifecycle_error=1
+    exit 1
+  fi
+  if [ "$interrupted" -ne 0 ]; then exit "$interrupted"; fi
+  if wait "$active_pid"; then code=0; else code=$?; fi
+  if [ "$interrupted" -ne 0 ]; then exit "$interrupted"; fi
+  elapsed=$((SECONDS - active_started))
+  if [ "$code" -eq 0 ]; then state=PASS; else state=FAIL; fi
+  if ! write_result "$name" "$state" "$code" "$elapsed" "$active_pid"; then
+    lifecycle_error=1
+    exit 1
+  fi
+  active_state=settled
+  # A command can exit before its descendants. Contain them before admitting
+  # the next check; a failed cleanup cannot turn into an overall PASS.
+  if ! stop_group "$active_pid" false; then
+    lifecycle_error=1
+    exit 1
+  fi
+  active_state=idle
+  active_pid=""
+  printf '  %-4s %-10s %ss (exit %s)\n' "$state" "$name" "$elapsed" "$code" || fail_run "Cannot print result: $name"
+  if [ "${usage_verbose:-false}" = true ]; then
+    cat "$log_dir/$name.log" || fail_run "Cannot print full log: $name"
+  elif [ "$code" -ne 0 ]; then
+    # Bound bytes as well as lines; one tool may emit an enormous single line.
+    tail -c 1200 "$log_dir/$name.log" | tail -n 8 || fail_run "Cannot print failure excerpt: $name"
+    printf '\n  Full log: %s/%s.log\n' "$log_dir" "$name" || fail_run "Cannot print log path: $name"
+  fi
+  return "$code"
+}
+
+# Inventory and admission policy live together. Keep result names aligned with
+# the calls below; these checks are independent, so collect every outcome.
+checks=(tests lint readme whitespace)
+printf 'Validation logs: %s\n' "$log_dir"
+for name in ${checks[@]+"${checks[@]}"}; do
+  write_result "$name" NOT-RUN - 0 -
+done
+write_report RUNNING -
+printf '%s\n' "$$" > "$log_dir/supervisor.pid"
+# Each background check gets its own process group without setsid or another
+# scheduler. Commands must not daemonize or create independent process groups.
+set -m
+# Record signals without exiting between spawn and PID assignment. Admission and
+# wait boundaries below exit only after the current child identity is established.
+trap 'if [ "$interrupted" -eq 0 ]; then interrupted=130; fi' INT
+trap 'if [ "$interrupted" -eq 0 ]; then interrupted=143; fi' TERM
+trap 'finish "$?"' EXIT
+
+# BATS/Rush owns test parallelism; the aggregate starts no competing check pool.
+run_check tests mise run test || failed=1
+run_check lint "${CODEBASE:-codebase}" lint "$repo" || failed=1
+run_check readme "${README:-readme}" build --check || failed=1
+run_check whitespace git diff --check || failed=1
+finished=true
+exit "$failed"

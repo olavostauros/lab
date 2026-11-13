@@ -1,0 +1,21 @@
+[settings]
+quiet = true
+task_output = "interleave"
+experimental = true
+aqua.registries = ["https://github.com/KnickKnackLabs/bats-core"]
+
+[plugins]
+shiv = "https://github.com/KnickKnackLabs/vfox-shiv"
+
+[tools]
+"aqua:KnickKnackLabs/bats-core" = "1.14.0-kkl.3"
+"aqua:shenwei356/rush" = "0.9.0"
+gum = "0.17.0"
+"shiv:codebase" = "0.5"
+"shiv:readme" = "0.3"
+
+[_.codebase]
+name = "lab"
+lint = ["@all"]
+# This tested aggregate owns lint; Codebase checks the CI call, not task internals.
+ci_lint_gate = "mise run validate --verbose"

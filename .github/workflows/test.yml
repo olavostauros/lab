@@ -1,0 +1,46 @@
+name: Test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GH_TOKEN: ${{ github.token }}
+  GITHUB_TOKEN: ${{ github.token }}
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Resolve mise cache date
+        run: echo "MISE_CACHE_DATE=$(date -u +%Y-%m-%d)" >> "$GITHUB_ENV"
+
+      - name: Set up mise
+        uses: jdx/mise-action@v4
+        with:
+          # Use the locally validated release; the action default referenced an unavailable tag.
+          version: 2026.8.10
+          install: true
+          cache: true
+          # Retain mise-action's platform and config dimensions while rotating
+          # mutable tool-selector caches each UTC day.
+          cache_key: "{{default}}-{{env.MISE_CACHE_DATE}}"
+        env:
+          # Serialize installation without changing test and lint behavior.
+          MISE_JOBS: 1
+
+      - name: Run validation
+        # Keep the same local gate; full output survives this ephemeral runner.
+        run: mise run validate --verbose

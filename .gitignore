@@ -1,0 +1,13 @@
+# Local mise overrides
+mise.local.toml
+
+# Editor / OS noise
+.DS_Store
+*.swp
+
+# Runtime scratch
+*.log
+tmp/
+
+# JavaScript package manager noise if a copied repo grows one
+node_modules/
