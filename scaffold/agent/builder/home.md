@@ -1,18 +1,21 @@
 # {{AGENT}}
 
-Home repo for **{{AGENT}}**. This file is the canonical startup contract —
-the first thing {{AGENT}} reads on waking.
+Home note of **{{AGENT}}**: the canonical startup contract — the first
+thing {{AGENT}} reads on waking. It lives in the lab's notes, encrypted
+at rest like every file there.
 
 ## Who you are
 
 You are **{{AGENT}}**, the {{ROLE}} agent of **{{PROJECT}}**. You own
 `{{WORK_PATH}}/{{OWNS}}`. {{CHARGE}}
 
-- **Home:** `{{HOME_PATH}}` (this repo). Local only; no
-  remote yet. Write here as if a stranger will read it anyway: no tokens, no
-  key material, no customer data.
-- **Workspace:** `{{WORKSPACE_PATH}}/` — scratch clones and
-  experiments.
+- **Home:** `{{HOME_NOTE}}` (this note), with `{{SCRATCHPAD_NOTE}}` for
+  session memory and any `{{AGENT}}-*.md` sibling for what you need to
+  keep — the lab's own notes, encrypted at rest. Write here as if a
+  stranger will read it anyway: no tokens, no key material, no customer
+  data.
+- **Scratch:** `mktemp -d` — clones and experiments live there and are
+  removed when done.
 - **Lab:** `{{LAB_PATH}}`. Your lab-visible identity is
   `.agents/notes/{{AGENT}}.md` there, and it governs.
 - **Work tree:** `{{WORK_PATH}}` — one checkout, shared with the owner and
@@ -73,8 +76,9 @@ owner's gh login.` One idea, cut fresh from `main`, never stacked.
 and SHA, base and SHA) and `pr:` lines filled in, and anything you learned
 in `notes:`. That edit is Tier 1; commit it on your topic branch.
 
-**10. Clean up.** Leave the shared checkout on `main`. Update this home's
-`SCRATCHPAD.md` with what is open and what comes next.
+**10. Clean up.** Leave the shared checkout on `main`. Update
+`{{SCRATCHPAD_NOTE}}` with what is open and what comes next — a notes
+change, committed on your topic branch like the rest.
 
 ## Always work on a branch
 

@@ -15,13 +15,14 @@ lab is where agents:
 
 This lab lives **inside** the project it works on: `./lab` is the root of the `lab` repo, not a repo of its own. Home and work share one git history, so the rules below bind both.
 
-## Architecture: two places to store things
+## Architecture: one place to store things
 
-| | lab (this directory) | Private home repo |
-|---|---|---|
-| Location | `./lab` — one checkout, shared | `.agents/home/<name>/home/` — inside the lab, git-ignored |
-| Visible to | the owner and every agent with access to the work tree | only this machine; never committed, never pushed |
-| Holds | shared notes, identity files, the work queue | canonical `AGENTS.md`, session logs, private memory |
+Everything the lab knows lives in `./lab` — one repo, one checkout,
+shared by the owner and every agent with access to the work tree. Notes,
+identity files, the work queue, and each agent's memory all live under
+`.agents/notes/`, readable in this checkout and opaque in git. The only
+machine-local piece is `.agents/secrets/<name>/`, git-ignored, where a
+granted credential lives.
 
 **`./lab` is a single shared checkout.** Switching its branch moves it
 for every agent at once. Prove the branch in the same command that commits,
@@ -59,9 +60,9 @@ files, not an edit across the boundary.
 
 Check `$GIT_AUTHOR_NAME`. If it names an agent on the roster, read your
 canonical identity and startup instructions at
-`.agents/home/<name>/home/AGENTS.md` and follow the startup procedure it
+`.agents/notes/<name>-home.md` and follow the startup procedure it
 describes. If it says `steward`, you are the lab's own voice and your
-home is `.agents/home/steward/home/`.
+home note is `.agents/notes/steward-home.md`.
 
 If your identity isn't set, ask the owner which agent you are. Don't guess.
 An unset identity means a commit lands authored by the owner, and
@@ -143,7 +144,7 @@ No approval needed. Do it on a branch, commit it, report it.
   except a typo or broken-link fix.
 - Entries in [[lab-backlog]] and [[work-queue]]: adding, re-ranking,
   correcting, marking done.
-- Your own scratchpad and session log in your home repo.
+- Your own `<name>-*.md` notes — scratchpad, session log, memory.
 
 #### Tier 2 — propose, do not apply
 
@@ -213,8 +214,8 @@ says "three" while the table says four hides a grant; one that summarises the
 list too narrowly revokes one. Both fail silently. Link here instead.
 
 A row that grants an account names the agent, the login and the date —
-"`vulcan` as `vulcan-acme` on GitHub, 2026-03-01" — and the files under the
-agent's workspace carry the credential itself, never the row (see
+"`vulcan` as `vulcan-acme` on GitHub, 2026-03-01" — and
+`.agents/secrets/<name>/` carries the credential itself, never the row (see
 "Tooling", `gh`).
 
 Until a row exists, each agent's standing permission is exactly Tier 1:
@@ -240,16 +241,17 @@ a vault: still no keys, no customer data, no account numbers in
 Notes use YAML frontmatter (title, tags, related, created, updated) and
 `[[wikilinks]]` for cross-referencing.
 
-## Personal workspace
+## Agent memory
 
-Each agent gets `.agents/home/<name>/` for hands-on work; the private home
-repo lives at `.agents/home/<name>/home/`. The steward is the lab
-speaking, so its workspace is the lab's own: `.agents/home/steward/`. The
+Each agent's memory lives in the lab's notes: `.agents/notes/<name>-home.md`
+is its canonical startup contract, `.agents/notes/<name>-scratchpad.md` its
+session log, and any other `<name>-*.md` note its private memory — all
+encrypted at rest with the rest of `.agents/notes/`. The steward is the lab
+speaking, so its home note is `.agents/notes/steward-home.md`. The
 `./lab` checkout is shared, not per-agent — see "Architecture"
-above. `.agents/home/` is git-ignored: private to this machine and never
-committed. A credential the owner has granted lives at
-`.agents/home/<name>/.secrets/`, beside the home and never inside it: a
-repo is one careless `git add` from publishing a key.
+above. A credential the owner has granted lives at
+`.agents/secrets/<name>/`, git-ignored and machine-local: a repo is one
+careless `git add` from publishing a key.
 
 ## Communication
 
@@ -285,10 +287,10 @@ repo is one careless `git add` from publishing a key.
   A grant, when made, is four things in the owner's own turn: a dated row
   in the loosenings table; the "Identity, as of" section of
   `.agents/notes/<name>.md`; `sops` pinned under `[tools]` in `mise.toml`; and two
-  files under the agent's workspace,
-  `.agents/home/<name>/.secrets/identity.txt`
+  files in `.agents/secrets/<name>/`:
+  `identity.txt`
   (an age identity, minted by the owner with `age-keygen`) and
-  `.agents/home/<name>/.secrets/vault.enc.yaml` (a `secrets` sops vault holding
+  `vault.enc.yaml` (a `secrets` sops vault holding
   `<name>/github-pat`, `<name>/github-username`, and whatever else the grant
   covers). Once the identity file exists, `agent-env <name>` also exports
   the `secrets` sops configuration — provider, vault, identity, recipient —
@@ -313,7 +315,7 @@ repo is one careless `git add` from publishing a key.
   not on `.agents/roster.tsv` unless `LAB_OWNER_COMMIT=1`.
   Install with `mise run install-hooks`.
 - **A harness, if any** — this lab does not depend on one, and nothing
-  here writes a runner's files. The roster and each agent's home are the
+  here writes a runner's files. The roster and each agent's notes are the
   identity; whatever definition a runner wants is a projection of those,
   written outside the lab by the owner and Tier 2 to change. The
   steward's definition, where one exists, is named after the lab.

@@ -129,11 +129,11 @@ const emitted = [
   [".agents/notes/work-queue.md", "the owner files entries here, each addressed to one agent"],
   [".agents/notes/lab-backlog.md", "Tier 2 proposals; empty"],
   [".agents/notes/lab-style.md", "how the lab likes its work done — wired to Read-first; practice, not authority, and the owner's to change"],
-  [".agents/notes/steward.md", "the steward's identity note; its home goes under .agents/home/steward/"],
+  [".agents/notes/steward.md", "the steward's identity note; its home is .agents/notes/steward-home.md"],
   [".agents/hooks/agent-identity", "pre-commit guard: refuses an author not on the roster unless <LAB>_OWNER_COMMIT=1"],
   [".agents/tasks/{welcome,test,agent-env,install-hooks}", "the task surface; agent-env sets <name>@<lab>.invalid as the git author — a label on a reserved name that claims no domain — or, with LAB_GH_EMAIL set in mise.toml, an address GitHub attributes to the owner"],
   [".agents/test/*.bats", "the lab's own checks, roster-driven so they stay true as agents join"],
-  [".agents/home/", "the agents' private workspaces, git-ignored: each <name>/ holds a home/ repo and, once granted, a .secrets/ vault"],
+  [".agents/secrets/", "granted credentials, git-ignored and machine-local: each <name>/ holds an age identity and a secrets sops vault"],
   ["notes/ at the work root", "the product's written memory — docs under notes/docs/, numbered decisions under notes/decisions/, learned facts flat; shared and append-only, and never .agents/notes/, which stays the lab's"],
   ["mise.toml, README.md, .gitignore", "the rest; the README carries the one line of attribution a lab keeps, Started from lab on <date>, at <version> — the version lab version printed when the lab was made, which lab doctor reads back against the version checking it"],
 ];
@@ -396,7 +396,7 @@ lab doctor            # healthy`}</CodeBlock>
         <Code>AGENTS.md</Code>
         {" beside the project's own files and "}
         <Code>.agents/</Code>
-        {" holding the roster, notes, guard, tasks and homes. An existing "}
+        {" holding the roster, notes, guard and tasks. An existing "}
         <Code>AGENTS.md</Code>
         {", "}
         <Code>mise.toml</Code>
@@ -405,7 +405,7 @@ lab doctor            # healthy`}</CodeBlock>
         {" is kept, never overwritten: "}
         <Code>init</Code>
         {" prints what to merge (the markers, the env block, the "}
-        <Code>.agents/home/</Code>
+        <Code>.agents/secrets/</Code>
         {" ignore) and "}
         <Code>lab doctor</Code>
         {" fails until it is in. The lab's name is "}
@@ -452,8 +452,8 @@ lab doctor            # healthy`}</CodeBlock>
         <Code>init</Code>
         {". The roster, and each agent's role, directory and charge, given to "}
         <Code>agent add</Code>
-        {". The loosenings table, one dated row at a time, in your own turn. A granted account, as a row in that table and two files under the agent's workspace, "}
-        <Code>.agents/home/&lt;name&gt;/.secrets/</Code>
+        {". The loosenings table, one dated row at a time, in your own turn. A granted account, as a row in that table and two files in "}
+        <Code>.agents/secrets/&lt;name&gt;/</Code>
         {": an age identity you mint and a "}
         <Code>secrets</Code>
         {" sops vault. A lighter attribution needs no account: set "}
@@ -515,9 +515,9 @@ lab doctor            # healthy`}</CodeBlock>
         {" on a local branch, files everything else as a backlog proposal, and reports to the owner in the session."}
       </Paragraph>
       <Paragraph>
-        {"The steward is the lab speaking, so its identity is the lab's. Its home is "}
-        <Code>.agents/home/steward/</Code>
-        {" — inside the lab and git-ignored, like every agent's — and a runner's definition for it, where one exists, is named after the lab."}
+        {"The steward is the lab speaking, so its identity is the lab's. Its home note is "}
+        <Code>.agents/notes/steward-home.md</Code>
+        {" — an encrypted note like every agent's — and a runner's definition for it, where one exists, is named after the lab."}
       </Paragraph>
       <Paragraph>
         {"It carries "}
@@ -539,18 +539,12 @@ lab doctor            # healthy`}</CodeBlock>
         </Item>
         <Item>a bullet under "Who lives here" and a row in the Read-first table</Item>
         <Item>
-          <Code>.agents/home/&lt;name&gt;/home/</Code>
-          {" with "}
-          <Code>AGENTS.md</Code>
-          {", "}
-          <Code>mise.toml</Code>
-          {", "}
-          <Code>SCRATCHPAD.md</Code>
-          {", as a local git repo — the agent's own startup contract, in the "}
-          <Code>AGENTS.md</Code>
-          {" convention any harness can read; "}
+          <Code>.agents/notes/&lt;name&gt;-home.md</Code>
+          {" and "}
+          <Code>.agents/notes/&lt;name&gt;-scratchpad.md</Code>
+          {" — the agent's own startup contract and session memory, encrypted at rest with the rest of the notes; "}
           <Code>lab agent home &lt;name&gt;</Code>
-          {" rebuilds it if it is ever lost"}
+          {" rebuilds them if they are ever lost"}
         </Item>
       </List>
       <Paragraph>
@@ -628,7 +622,7 @@ lab doctor            # healthy`}</CodeBlock>
           {" never read or write a runner's files."}
         </Item>
         <Item>
-          <Bold>There is one steward, named steward, homed at .agents/home/steward/.</Bold>
+          <Bold>There is one steward, named steward, homed at .agents/notes/steward-home.md.</Bold>
           {" It has no outward identity, and no upgrade path gives it one."}
         </Item>
         <Item>

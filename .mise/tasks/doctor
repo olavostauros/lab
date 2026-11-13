@@ -173,15 +173,15 @@ while IFS= read -r agent; do
   [ -n "$agent" ] || continue
   count=$((count + 1))
   kind="$(roster_kind "$LAB" "$agent")"
-  home="$(agent_workspace "$LAB" "$agent" "$kind")/home"
+  home_note="$(agent_home_note "$LAB" "$agent")"
   if [ "$kind" = steward ]; then
     keepers=$((keepers + 1))
     [ "$agent" = "$STEWARD" ] || fail "$agent: a steward must be named $STEWARD"
   fi
   if [ -f "$LAB/.agents/notes/$agent.md" ]; then ok "$agent: .agents/notes/$agent.md"; else fail "$agent: .agents/notes/$agent.md missing"; fi
   if grep -q "^- \*\*$agent\*\* — " "$LAB/AGENTS.md"; then ok "$agent: on the roster in AGENTS.md"; else fail "$agent: not listed under 'Who lives here' in AGENTS.md"; fi
-  if [ -f "$home/AGENTS.md" ]; then ok "$agent: home at $(display_path "$home")"; else warn "$agent: no home at $(display_path "$home") → lab agent home $agent"; fi
-  secrets_dir="$(agent_secrets_dir "$LAB" "$agent" "$kind")"
+  if [ -f "$home_note" ]; then ok "$agent: home note .agents/notes/$agent-home.md"; else warn "$agent: no home note at .agents/notes/$agent-home.md → lab agent home $agent"; fi
+  secrets_dir="$(agent_secrets_dir "$LAB" "$agent")"
   if [ -f "$secrets_dir/identity.txt" ]; then
     if [ "$kind" = steward ]; then
       fail "$agent: has $(display_path "$secrets_dir")/identity.txt; a steward has no account, ever → move or delete it"
@@ -194,14 +194,14 @@ done <<< "$agents_text"
 [ "$keepers" -le 1 ] || fail "roster lists $keepers stewards; a lab has exactly one"
 [ "$keepers" -eq 1 ] || warn "no steward → lab agent add $STEWARD"
 
-if [ -d "$LAB/.agents/home" ]; then
+if [ -d "$LAB/.agents/secrets" ]; then
   case "$LAB" in
-    "$WORK")   rel=".agents/home" ;;
-    "$WORK"/*) rel="${LAB#"$WORK"/}/.agents/home" ;;
+    "$WORK")   rel=".agents/secrets" ;;
+    "$WORK"/*) rel="${LAB#"$WORK"/}/.agents/secrets" ;;
     *)         rel="" ;;
   esac
   if [ -n "$rel" ] && ! git -C "$WORK" check-ignore -q "$rel" 2>/dev/null; then
-    warn ".agents/home/ is not git-ignored, and agent homes live there → add it to .gitignore"
+    warn ".agents/secrets/ is not git-ignored, and granted credentials live there → add it to .gitignore"
   fi
 fi
 

@@ -9,24 +9,22 @@ setup() {
   lab agent add vulcan --lab "$H" --role backend --owns server/ >/dev/null
 }
 
-@test "agent home makes a missing home for a rostered agent and keeps an existing one" {
+@test "agent home makes missing home notes for a rostered agent and keeps existing ones" {
   require_lab_tasks init agent/add agent/home
-  rm -rf "$H/.agents/home/vulcan"
+  rm -f "$H/.agents/notes/vulcan-home.md" "$H/.agents/notes/vulcan-scratchpad.md"
   run lab agent home vulcan --lab "$H"
   assert_success
   assert_output_contains "create:"
-  [ -f "$H/.agents/home/vulcan/home/AGENTS.md" ]
-  [ -f "$H/.agents/home/vulcan/home/mise.toml" ]
-  [ -f "$H/.agents/home/vulcan/home/SCRATCHPAD.md" ]
-  [ -d "$H/.agents/home/vulcan/home/.git" ]
-  assert_file_contains "$H/.agents/home/vulcan/home/AGENTS.md" "You own"
-  assert_file_contains "$H/.agents/home/vulcan/home/AGENTS.md" "$H/.agents/home/vulcan/home"
-  ! grep -rq '{{' "$H/.agents/home/vulcan/home"
+  [ -f "$H/.agents/notes/vulcan-home.md" ]
+  [ -f "$H/.agents/notes/vulcan-scratchpad.md" ]
+  assert_file_contains "$H/.agents/notes/vulcan-home.md" "You own"
+  assert_file_contains "$H/.agents/notes/vulcan-home.md" "$H/.agents/notes/vulcan-home.md"
+  ! grep -rq '{{' "$H/.agents/notes/vulcan-home.md" "$H/.agents/notes/vulcan-scratchpad.md"
 
   run lab agent home vulcan --lab "$H"
   assert_success
   assert_output_contains "keep:"
-  assert_output_contains "already has an AGENTS.md"
+  assert_output_contains "already exists"
 }
 
 @test "agent home refuses a name that is not on the roster" {
@@ -38,14 +36,14 @@ setup() {
 
 @test "agent home renders a builder's ownership and a judge's stance from the roster" {
   require_lab_tasks init agent/add agent/home
-  rm -rf "$H/.agents/home/vulcan"
+  rm -f "$H/.agents/notes/vulcan-home.md" "$H/.agents/notes/vulcan-scratchpad.md"
   run lab agent home vulcan --lab "$H"
   assert_output_contains "create:"
-  assert_file_contains "$H/.agents/home/vulcan/home/AGENTS.md" "server/"
+  assert_file_contains "$H/.agents/notes/vulcan-home.md" "server/"
 
   lab agent add argus --lab "$H" --role review >/dev/null
-  rm -rf "$H/.agents/home/argus"
+  rm -f "$H/.agents/notes/argus-home.md" "$H/.agents/notes/argus-scratchpad.md"
   run lab agent home argus --lab "$H"
   assert_output_contains "create:"
-  [ -f "$H/.agents/home/argus/home/AGENTS.md" ]
+  [ -f "$H/.agents/notes/argus-home.md" ]
 }

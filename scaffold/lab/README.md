@@ -44,9 +44,9 @@ eval "$(mise run -q agent-env <name>)" # become an agent, in the shell that comm
 - **`.agents/hooks/`** — `agent-identity`, the pre-commit guard.
 - **`.agents/tasks/`** — the lab's own machinery, run by `mise run`.
 - **`.agents/test/`** — the lab's own checks, run by `mise run test`.
-- **`.agents/home/`** — private agent workspaces, git-ignored and never
-  committed. Each `<name>/` holds a `home/` repo (the canonical
-  `AGENTS.md`, a scratchpad) and, once granted, a `.secrets/` vault.
+- **`.agents/secrets/`** — granted credentials, git-ignored and
+  machine-local. Each `<name>/` holds an age identity and a `secrets`
+  sops vault.
 
 ## Signing
 
@@ -89,6 +89,6 @@ None is filed: the owner files the ones this lab wants in
 `.agents/notes/lab-backlog.md`, one at a time, and each becomes a dated
 widening in `AGENTS.md` when it is granted. A granted account is that row
 plus two files under the agent's workspace,
-`.agents/home/<name>/.secrets/`: an age identity and a `secrets` sops
+`.agents/secrets/<name>/`: an age identity and a `secrets` sops
 vault, which `mise run agent-env <name>` then exports and `mise run
 welcome` reports under `credentials:`.

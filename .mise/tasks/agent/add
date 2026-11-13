@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#MISE description="Put an agent on a lab's roster: identity note and home repo"
+#MISE description="Put an agent on a lab's roster: identity note and home notes"
 #USAGE arg "<name>" help="Agent name, lowercase (for example: vulcan); 'steward' is the steward"
 #USAGE flag "--lab <path>" help="The lab directory; defaults to the current directory"
 #USAGE flag "--role <role>" help="Two or three words: what the agent is for; defaults to 'stewardship' for the steward"

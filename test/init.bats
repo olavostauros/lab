@@ -57,7 +57,7 @@ setup() {
   assert_file_contains "$project/AGENTS.md" "lives **inside** the project"
   assert_file_contains "$project/AGENTS.md" "is the root of the \`project\` repo"
   [ -n "$(git -C "$project" status --porcelain)" ]
-  [ -f "$project/.agents/home/steward/home/AGENTS.md" ]
+  [ -f "$project/.agents/notes/steward-home.md" ]
   [ -f "$project/notes/README.md" ]
 }
 
@@ -71,7 +71,7 @@ setup() {
   assert_file_contains "$project/hall/mise.toml" 'LAB_PROJECT = "project"'
   assert_file_contains "$project/hall/AGENTS.md" "is a directory of the \`project\` repo"
   [ -n "$(git -C "$project" status --porcelain -- hall)" ]
-  [ -f "$project/hall/.agents/home/steward/home/AGENTS.md" ]
+  [ -f "$project/hall/.agents/notes/steward-home.md" ]
   [ -f "$project/notes/README.md" ]
   [ ! -e "$project/hall/notes" ]
 }
@@ -213,16 +213,16 @@ setup() {
   assert_output_contains "commits here: signed (openpgp, key unset; picked by the committer identity)"
 }
 
-@test "the lab README and the steward's home say what a signing machine means" {
+@test "the lab README and the steward's home note say what a signing machine means" {
   require_lab_tasks init
   lab init hearth --at "$BATS_TEST_TMPDIR/hearth"
   h="$BATS_TEST_TMPDIR/hearth"
   assert_file_contains "$h/README.md" "## Signing"
   assert_file_contains "$h/README.md" "signed with the owner's key"
   assert_file_contains "$h/README.md" "git -C $h config"
-  assert_file_contains "$h/.agents/home/steward/home/AGENTS.md" "stalls on its passphrase prompt is reported, not"
-  assert_file_contains "$h/.agents/home/steward/home/AGENTS.md" "never set"
-  assert_file_contains "$h/.agents/home/steward/home/AGENTS.md" "HEARTH_OWNER_COMMIT"
+  assert_file_contains "$h/.agents/notes/steward-home.md" "stalls on its passphrase prompt is reported, not"
+  assert_file_contains "$h/.agents/notes/steward-home.md" "never set"
+  assert_file_contains "$h/.agents/notes/steward-home.md" "HEARTH_OWNER_COMMIT"
 }
 
 @test "install-hooks wires the guard into the work tree and the guard refuses the owner" {
@@ -251,16 +251,16 @@ setup() {
   assert_file_contains "$h/AGENTS.md" "- **steward** — stewardship. Owns no directory."
   assert_file_contains "$h/AGENTS.md" "The exception is **steward**, the lab's own voice"
   assert_file_contains "$h/AGENTS.md" "The steward is"
-  assert_file_contains "$h/AGENTS.md" "its workspace is the lab's own: \`.agents/home/steward/\`"
+  assert_file_contains "$h/AGENTS.md" "its home note is \`.agents/notes/steward-home.md\`"
   assert_file_contains "$h/AGENTS.md" "The steward is excluded from any such entry"
   assert_file_contains "$h/.agents/notes/steward.md" "No GitHub account, no signing key, no mail — by design"
-  assert_file_contains "$h/.agents/notes/steward.md" "$h/.agents/home/steward/home/"
-  assert_file_contains "$h/.agents/home/steward/home/AGENTS.md" "# hearth"
-  assert_file_contains "$h/.agents/home/steward/home/AGENTS.md" "You are **steward**, the steward of **hearth**"
-  assert_file_contains "$h/.agents/home/steward/home/AGENTS.md" "no GitHub account, no signing key, and no mail, permanently"
-  [ -d "$h/.agents/home/steward/home/.git" ]
+  assert_file_contains "$h/.agents/notes/steward.md" "$h/.agents/notes/steward-home.md"
+  assert_file_contains "$h/.agents/notes/steward-home.md" "# hearth"
+  assert_file_contains "$h/.agents/notes/steward-home.md" "You are **steward**, the steward of **hearth**"
+  assert_file_contains "$h/.agents/notes/steward-home.md" "no GitHub account, no signing key, and no mail, permanently"
+  [ ! -e "$h/.agents/home" ]
   [ -z "$(ls -A "$DEFINITIONS_DIR")" ]
-  ! grep -rq '{{' "$h/.agents/notes/steward.md" "$h/.agents/home/steward/home"
+  ! grep -rq '{{' "$h/.agents/notes/steward.md" "$h/.agents/notes/steward-home.md" "$h/.agents/notes/steward-scratchpad.md"
   [ -z "$(git -C "$h" status --porcelain)" ]
   run in_lab "$h" test
   assert_success
@@ -271,8 +271,8 @@ setup() {
   lab init hearth --at "$BATS_TEST_TMPDIR/one/hearth"
   run lab init hearth --at "$BATS_TEST_TMPDIR/two/hearth"
   assert_success
-  [ -f "$BATS_TEST_TMPDIR/one/hearth/.agents/home/steward/home/AGENTS.md" ]
-  [ -f "$BATS_TEST_TMPDIR/two/hearth/.agents/home/steward/home/AGENTS.md" ]
+  [ -f "$BATS_TEST_TMPDIR/one/hearth/.agents/notes/steward-home.md" ]
+  [ -f "$BATS_TEST_TMPDIR/two/hearth/.agents/notes/steward-home.md" ]
 }
 
 @test "two labs on one machine each keep their own steward" {
@@ -280,8 +280,8 @@ setup() {
   lab init hearth --at "$BATS_TEST_TMPDIR/hearth"
   run lab init hall --at "$BATS_TEST_TMPDIR/hall"
   assert_success
-  [ -f "$BATS_TEST_TMPDIR/hearth/.agents/home/steward/home/AGENTS.md" ]
-  [ -f "$BATS_TEST_TMPDIR/hall/.agents/home/steward/home/AGENTS.md" ]
+  [ -f "$BATS_TEST_TMPDIR/hearth/.agents/notes/steward-home.md" ]
+  [ -f "$BATS_TEST_TMPDIR/hall/.agents/notes/steward-home.md" ]
   grep -q '^steward' "$BATS_TEST_TMPDIR/hall/.agents/roster.tsv"
 }
 
@@ -290,8 +290,8 @@ setup() {
   lab init hearth --at "$BATS_TEST_TMPDIR/project/lab"
   h="$BATS_TEST_TMPDIR/project/lab"
   assert_file_contains "$h/mise.toml" 'LAB_NAME = "hearth"'
-  [ -f "$h/.agents/home/steward/home/AGENTS.md" ]
-  assert_file_contains "$h/.agents/notes/steward.md" "$h/.agents/home/steward/home/"
+  [ -f "$h/.agents/notes/steward-home.md" ]
+  assert_file_contains "$h/.agents/notes/steward.md" "$h/.agents/notes/steward-home.md"
   lab agent add builder --lab "$h" --role implementation --owns src/
   grep -q $'^builder\t' "$h/.agents/roster.tsv"
   run lab doctor --lab "$h"
@@ -302,14 +302,14 @@ setup() {
   require_lab_tasks init
   lab init hearth --at "$BATS_TEST_TMPDIR/hearth"
   h="$BATS_TEST_TMPDIR/hearth"
-  run env -u HEARTH_OWNER_COMMIT GIT_AUTHOR_NAME=steward "$h/.agents/hooks/agent-identity"
+  run env -u LAB_DIR -u HEARTH_OWNER_COMMIT GIT_AUTHOR_NAME=steward "$h/.agents/hooks/agent-identity"
   assert_success
   run in_lab "$h" agent-env steward
   assert_success
   assert_output_contains "export GIT_AUTHOR_NAME=steward"
   run env GIT_AUTHOR_NAME=steward bash -c 'in_lab "$@"' _ "$h" welcome
   assert_success
-  assert_output_contains "home: .agents/home/steward/home/AGENTS.md"
+  assert_output_contains "home: .agents/notes/steward-home.md"
 }
 
 @test "init encrypts the lab's .agents/notes at rest, at the work root" {

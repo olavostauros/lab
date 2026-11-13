@@ -132,7 +132,7 @@ fi
 
 [ -z "$kept_agents" ]    || say "note: AGENTS.md is pre-existing — merge in the lab markers (<!-- lab:roster -->, <!-- lab:read-first -->) and the authority sections, or doctor will fail"
 [ -z "$kept_mise" ]      || say "note: mise.toml is pre-existing — merge in the lab's [env] block and task_config.includes = [\".agents/tasks\"], or the lab's tasks will not load"
-[ -z "$kept_gitignore" ] || say "note: .gitignore is pre-existing — add .agents/home/ to it, or agent homes could be committed"
+[ -z "$kept_gitignore" ] || say "note: .gitignore is pre-existing — add .agents/secrets/ to it, or granted credentials could be committed"
 
 say ""
 say "done: $NAME at $(display_path "$TARGET") (work tree: $(display_path "$WORK"))"

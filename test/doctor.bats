@@ -13,7 +13,7 @@ setup() {
   run lab doctor --lab "$H"
   assert_success
   assert_output_contains "doctor: healthy"
-  assert_output_contains "ok:   steward: home at $H/.agents/home/steward/home"
+  assert_output_contains "ok:   steward: home note .agents/notes/steward-home.md"
   assert_output_contains "ok:   nothing here is the framework's: no {{placeholder}}, no lineage name"
   assert_output_contains "warn: pre-commit guard not installed"
   ! [[ "$output" == *"fail:"* ]]
@@ -46,20 +46,21 @@ setup() {
   ! [[ "$output" == *"docs/ at the work root"* ]]
 }
 
-@test "doctor warns when .agents/home is not git-ignored" {
-  sed -i '/^\.agents\/home\/$/d' "$H/.gitignore"
+@test "doctor warns when .agents/secrets is not git-ignored" {
+  mkdir "$H/.agents/secrets"
+  sed -i '/^\.agents\/secrets\/$/d' "$H/.gitignore"
   run lab doctor --lab "$H"
   assert_success
-  assert_output_contains "warn: .agents/home/ is not git-ignored"
+  assert_output_contains "warn: .agents/secrets/ is not git-ignored"
 }
 
-@test "doctor fails a leftover placeholder in the lab or in a home" {
+@test "doctor fails a leftover placeholder in the lab or in a home note" {
   printf '{{LAB_NAME}}\n' >> "$H/README.md"
-  printf 'the home of {{AGENT}}\n' >> "$H/.agents/home/steward/home/SCRATCHPAD.md"
+  printf 'the home of {{AGENT}}\n' >> "$H/.agents/notes/steward-scratchpad.md"
   run lab doctor --lab "$H"
   assert_failure
   assert_output_contains "fail: placeholder: README.md:$(wc -l < "$H/README.md"):{{LAB_NAME}}"
-  assert_output_contains "fail: placeholder: .agents/home/steward/home/SCRATCHPAD.md:$(wc -l < "$H/.agents/home/steward/home/SCRATCHPAD.md"):{{AGENT}}"
+  assert_output_contains "fail: placeholder: .agents/notes/steward-scratchpad.md:$(wc -l < "$H/.agents/notes/steward-scratchpad.md"):{{AGENT}}"
   assert_output_contains "doctor: 2 failing"
   assert_output_contains "next: each placeholder: and lineage: line is the owner's to fix"
 }
@@ -88,9 +89,9 @@ setup() {
   lab agent add vulcan --lab "$H" --role backend --owns server/ >/dev/null
   run env PATH="$PATH:$HOME/.local/bin" bash -c 'lab "$@"' _ doctor --lab "$H"
   assert_success
-  assert_output_contains "ok:   steward: home at $H/.agents/home/steward/home"
+  assert_output_contains "ok:   steward: home note .agents/notes/steward-home.md"
   assert_output_contains "ok:   vulcan: .agents/notes/vulcan.md"
-  assert_output_contains "ok:   vulcan: home at"
+  assert_output_contains "ok:   vulcan: home note .agents/notes/vulcan-home.md"
   ! [[ "$output" == *"warn:"* ]]
   ! [[ "$output" == *"note:"* ]]
   ! [[ "$output" == *"definition"* ]]
@@ -113,9 +114,9 @@ setup() {
   mv "$H/.agents/roster.new" "$H/.agents/roster.tsv"
   run lab doctor --lab "$H"
   assert_success
-  assert_output_contains "ok:   steward: home at $H/.agents/home/steward/home"
-  assert_output_contains "ok:   vulcan: home at $H/.agents/home/vulcan/home"
-  assert_output_contains "ok:   argus: home at $H/.agents/home/argus/home"
+  assert_output_contains "ok:   steward: home note .agents/notes/steward-home.md"
+  assert_output_contains "ok:   vulcan: home note .agents/notes/vulcan-home.md"
+  assert_output_contains "ok:   argus: home note .agents/notes/argus-home.md"
 }
 
 @test "doctor fails when an agent is on the roster but not in the contract" {
@@ -143,7 +144,7 @@ setup() {
 }
 
 grant() {
-  local dir="$H/.agents/home/$1/.secrets"
+  local dir="$H/.agents/secrets/$1"
   mkdir -p "$dir"
   chmod 700 "$dir"
   printf '# created: 2026-01-01T00:00:00Z\n# public key: %s\n%s\n' "$RECIPIENT" "$SECRET_KEY" > "$dir/identity.txt"
@@ -158,11 +159,11 @@ vault() {
 RECIPIENT="age1$(printf 'q%.0s' $(seq 58))"
 SECRET_KEY="AGE-SECRET-KEY-1$(printf 'Q%.0s' $(seq 58))"
 
-@test "doctor fails a credential vault under the steward's workspace" {
+@test "doctor fails a credential vault under the steward's secrets dir" {
   grant steward >/dev/null
   run lab doctor --lab "$H"
   assert_failure
-  assert_output_contains "fail: steward: has $H/.agents/home/steward/.secrets/identity.txt; a steward has no account, ever"
+  assert_output_contains "fail: steward: has $H/.agents/secrets/steward/identity.txt; a steward has no account, ever"
   assert_output_contains "doctor: 1 failing"
 }
 

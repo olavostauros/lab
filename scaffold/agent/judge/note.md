@@ -34,11 +34,12 @@ Owns no directory. {{CHARGE}}
   `mise run agent-env {{AGENT}}` from `{{LAB_PATH}}`; with `LAB_GH_EMAIL`
   set in `mise.toml` the email is the owner's GitHub address instead, so
   the commit still names {{AGENT}} and links to the owner's account.
-  Commits only in `.agents/notes/`, as new files in `{{WORK_PATH}}/notes/`,
-  and in its own home.
+  Commits only in `.agents/notes/` — including its own `{{AGENT}}-*.md`
+  notes — and as new files in `{{WORK_PATH}}/notes/`.
 - No GitHub account, no signing key, no mail. Anything posted to GitHub goes
   through the owner's `gh` login and says so in its first line.
-- Home: `{{HOME_PATH}}/` — local git repo, no remote.
+- Home: `{{HOME_NOTE}}` — encrypted at rest; session memory in
+  `{{SCRATCHPAD_NOTE}}`.
 
 ## Stance
 

@@ -1,7 +1,7 @@
 setup() {
   cd "$BATS_TEST_DIRNAME/../.."
   ROSTER="$PWD/.agents/roster.tsv"
-  HOMES="$PWD/.agents/home"
+  SECRETS="$PWD/.agents/secrets"
 }
 
 teardown() {
@@ -47,7 +47,7 @@ teardown() {
 @test "agent-env exports the sops configuration from a granted identity, and never for the steward" {
   recipient="age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac8p"
   while IFS= read -r name; do
-    dir="$HOMES/$name/.secrets"
+    dir="$SECRETS/$name"
     mkdir -p "$dir"
     printf '# created: 2026-01-01T00:00:00Z\n# public key: %s\nAGE-SECRET-KEY-1FAKE\n' "$recipient" > "$dir/identity.txt"
     run mise run -q agent-env "$name"
@@ -67,7 +67,7 @@ teardown() {
 
 @test "agent-env fails an identity with no public-key line instead of exporting half a provider" {
   while IFS= read -r name; do
-    dir="$HOMES/$name/.secrets"
+    dir="$SECRETS/$name"
     mkdir -p "$dir"
     printf 'AGE-SECRET-KEY-1FAKE\n' > "$dir/identity.txt"
     run mise run -q agent-env "$name"

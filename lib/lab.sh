@@ -181,12 +181,16 @@ roster_has_kind() {
   awk -F '\t' -v k="$2" '!/^#/ && $4 == k { found = 1 } END { exit !found }' "$1/.agents/roster.tsv"
 }
 
-agent_workspace() {
-  printf '%s/.agents/home/%s\n' "$1" "$2"
+agent_home_note() {
+  printf '%s/.agents/notes/%s-home.md\n' "$1" "$2"
+}
+
+agent_scratchpad_note() {
+  printf '%s/.agents/notes/%s-scratchpad.md\n' "$1" "$2"
 }
 
 agent_secrets_dir() {
-  printf '%s/.secrets\n' "$(agent_workspace "$@")"
+  printf '%s/.agents/secrets/%s\n' "$1" "$2"
 }
 
 insert_before_marker() {
@@ -253,13 +257,11 @@ default_charge() {
 
 agent_vars() {
   local lab="$1" name="$2" role="$3" owns="$4" charge="$5" kind="$6"
-  local lab_name project work workspace home_dir
+  local lab_name project work
   lab_name="$(lab_name "$lab")"
   project="$(lab_project "$lab")"
   project="${project:-$lab_name}"
   work="$(lab_work_dir "$lab")"
-  workspace="$(agent_workspace "$lab" "$name" "$kind")"
-  home_dir="$workspace/home"
   printf '%s\n' \
     "AGENT=$name" \
     "ROLE=$role" \
@@ -270,28 +272,30 @@ agent_vars() {
     "LAB_PATH=$(display_path "$lab")" \
     "WORK_PATH=$(display_path "$work")" \
     "PROJECT=$project" \
-    "WORKSPACE_PATH=$(display_path "$workspace")" \
-    "HOME_PATH=$(display_path "$home_dir")" \
+    "HOME_NOTE=$(display_path "$(agent_home_note "$lab" "$name")")" \
+    "SCRATCHPAD_NOTE=$(display_path "$(agent_scratchpad_note "$lab" "$name")")" \
     "AUTHOR_DOMAIN=$(lab_author_domain "$lab")" \
     "CREATED=$(today)"
 }
 
 ensure_home() {
-  local lab="$1" name="$2" kind workspace home_dir
+  local lab="$1" name="$2" kind home_note scratchpad
   shift 2
   kind="$(roster_kind "$lab" "$name")"
-  workspace="$(agent_workspace "$lab" "$name" "$kind")"
-  home_dir="$workspace/home"
-  if [ -e "$home_dir/AGENTS.md" ]; then
-    say "keep: $(display_path "$home_dir") already has an AGENTS.md"
-    return
+  home_note="$(agent_home_note "$lab" "$name")"
+  scratchpad="$(agent_scratchpad_note "$lab" "$name")"
+  if [ -e "$home_note" ]; then
+    say "keep: .agents/notes/$name-home.md already exists"
+  else
+    render "$LAB_SCAFFOLD/agent/$kind/home.md" "$home_note" "$@"
+    say "create: .agents/notes/$name-home.md"
   fi
-  mkdir -p "$home_dir"
-  render "$LAB_SCAFFOLD/agent/$kind/AGENTS.md" "$home_dir/AGENTS.md" "$@"
-  render "$LAB_SCAFFOLD/agent/home/mise.toml" "$home_dir/mise.toml" "$@"
-  render "$LAB_SCAFFOLD/agent/home/SCRATCHPAD.md" "$home_dir/SCRATCHPAD.md" "$@"
-  [ -d "$home_dir/.git" ] || git -C "$home_dir" init -q -b main
-  say "create: $(display_path "$home_dir") (AGENTS.md, mise.toml, SCRATCHPAD.md; local repo, no remote)"
+  if [ -e "$scratchpad" ]; then
+    say "keep: .agents/notes/$name-scratchpad.md already exists"
+  else
+    render "$LAB_SCAFFOLD/agent/scratchpad.md" "$scratchpad" "$@"
+    say "create: .agents/notes/$name-scratchpad.md"
+  fi
 }
 
 add_agent() {
@@ -302,7 +306,7 @@ add_agent() {
   kind="$(agent_kind "$name" "$owns")"
   if [ "$kind" = steward ] && [ -n "$owns" ]; then die "the steward owns no directory; drop --owns"; fi
   if roster_has "$lab" "$name"; then
-    die "$name is already on the roster of $(display_path "$lab"); a missing home is made with 'lab agent home $name'"
+    die "$name is already on the roster of $(display_path "$lab"); missing home notes are made with 'lab agent home $name'"
   fi
   if [ "$kind" = steward ] && roster_has_kind "$lab" steward; then
     die "$(display_path "$lab") already has a steward; a lab has exactly one"

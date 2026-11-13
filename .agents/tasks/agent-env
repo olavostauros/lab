@@ -19,7 +19,7 @@ printf 'export GIT_COMMITTER_NAME=%q\n' "$name"
 printf 'export GIT_COMMITTER_EMAIL=%q\n' "$email"
 
 [ "$name" != steward ] || exit 0
-secrets_dir="$LAB_DIR/.agents/home/$name/.secrets"
+secrets_dir="$LAB_DIR/.agents/secrets/$name"
 identity="$secrets_dir/identity.txt"
 [ -f "$identity" ] || exit 0
 recipient="$(awk '/^# public key: / { print $4; exit }' "$identity")"

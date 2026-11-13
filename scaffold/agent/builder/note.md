@@ -30,7 +30,8 @@ Owns `{{WORK_PATH}}/{{OWNS}}`. {{CHARGE}}
   the commit still names {{AGENT}} and links to the owner's account.
 - No GitHub account, no signing key, no mail. Pushes and PRs go through the
   owner's `gh` login and say so in the PR body.
-- Home: `{{HOME_PATH}}/` — local git repo, no remote.
+- Home: `{{HOME_NOTE}}` — encrypted at rest; session memory in
+  `{{SCRATCHPAD_NOTE}}`.
 
 ## Stance
 

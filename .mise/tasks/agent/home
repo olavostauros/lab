@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-#MISE description="Create the private home of a rostered agent that lacks one"
+#MISE description="Create the home notes of a rostered agent that lacks them"
 #USAGE arg "<name>" help="Agent name, as on .agents/roster.tsv"
 #USAGE flag "--lab <path>" help="The lab directory; defaults to the current directory"
-#USAGE example "lab agent home vulcan --lab ~/example" header="Create vulcan's home under the lab's .agents/home/"
+#USAGE example "lab agent home vulcan --lab ~/example" header="Create vulcan's home notes under the lab's .agents/notes/"
 set -euo pipefail
 
 source "$MISE_CONFIG_ROOT/lib/lab.sh"
