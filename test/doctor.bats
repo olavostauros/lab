@@ -59,8 +59,8 @@ setup() {
   printf 'the home of {{AGENT}}\n' >> "$H/.agents/notes/steward-scratchpad.md"
   run peninsula doctor --lab "$H"
   assert_failure
-  assert_output_contains "fail: placeholder: README.md:$(wc -l < "$H/README.md"):{{LAB_NAME}}"
-  assert_output_contains "fail: placeholder: .agents/notes/steward-scratchpad.md:$(wc -l < "$H/.agents/notes/steward-scratchpad.md"):{{AGENT}}"
+  assert_output_contains "fail: placeholder: README.md:$(wc -l < "$H/README.md" | tr -d " "):{{LAB_NAME}}"
+  assert_output_contains "fail: placeholder: .agents/notes/steward-scratchpad.md:$(wc -l < "$H/.agents/notes/steward-scratchpad.md" | tr -d " "):{{AGENT}}"
   assert_output_contains "doctor: 2 failing"
   assert_output_contains "next: each placeholder: and lineage: line is the owner's to fix"
 }
@@ -71,12 +71,12 @@ setup() {
   printf 'as %s does, and as %s did\n' "$first" "${last^}" >> "$H/.agents/notes/work-queue.md"
   run peninsula doctor --lab "$H"
   assert_failure
-  assert_output_contains "fail: lineage: .agents/notes/work-queue.md:$(wc -l < "$H/.agents/notes/work-queue.md"):as $first does, and as ${last^} did"
+  assert_output_contains "fail: lineage: .agents/notes/work-queue.md:$(wc -l < "$H/.agents/notes/work-queue.md" | tr -d " "):as $first does, and as ${last^} did"
   assert_output_contains "doctor: 1 failing"
   ! [[ "$output" == *"fail: lineage: mise.toml"* ]]
   printf 'read KnickKnackLabs/notes\n' >> "$H/.agents/notes/work-queue.md"
   run peninsula doctor --lab "$H"
-  assert_output_contains "fail: lineage: .agents/notes/work-queue.md:$(wc -l < "$H/.agents/notes/work-queue.md"):read KnickKnackLabs/notes"
+  assert_output_contains "fail: lineage: .agents/notes/work-queue.md:$(wc -l < "$H/.agents/notes/work-queue.md" | tr -d " "):read KnickKnackLabs/notes"
 
   a="$BATS_TEST_TMPDIR/$first"
   peninsula install "$first" --at "$a" --project "the ${first^}" >/dev/null
