@@ -4,6 +4,13 @@ This repo was scaffolded from [KnickKnackLabs/trahmpolina](https://github.com/Kn
 the KnickKnackLabs starter skeleton for small maintained tools. Keep it boring
 on purpose: inherit conventions, not product decisions.
 
+[`AGENTS.md`](AGENTS.md) is the contract for this repository — read it before
+changing `scaffold/`, `lib/` or the command surface. A scaffold change alters
+the lab every future owner gets; it is the framework's opinion, and an opinion
+is discussed before it is changed, so open an issue first. One idea per pull
+request. Commit messages are conventional — `feat:`, `fix:`, `docs:`,
+`test:`, `refactor:` — with no footers and no tool attribution.
+
 ## Structure
 
 ```text
@@ -177,3 +184,14 @@ These checks do not install dependencies or write build outputs, and their test
 fixtures are isolated. There is no worktree lock. If an adopter adds shared
 writes, revisit ordering and exclusion before allowing overlapping runs; do not
 inherit a safety claim that this skeleton has not established.
+
+## Releasing
+
+A tag is an install target, not a bookmark: bare `shiv install lab` takes
+the newest release tag, and `shiv update lab` on any machine advances to
+it. So:
+
+- tag on `main` only, once the gates are green there;
+- `v` prefix and bare semver — `v0.2.0`, never `0.2.0` or `v0.2.0-rc1`;
+- `mise run version` on the tagged commit prints the tag, and a lab made
+  from it records the tag in its README's attribution line.

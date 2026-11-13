@@ -2,9 +2,9 @@
 
 # lab
 
-**A small tool scaffolded from the KnickKnackLabs skeleton.**
+**The starting point of a lab of agents.**
 
-The boring parts are already done.
+The rules, the roster, the queue and the checks — in place before the first agent wakes.
 
 ![shape: mise + BATS](https://img.shields.io/badge/shape-mise%20%2B%20BATS-4EAA25?style=flat&logo=gnubash&logoColor=white)
 [![tests: 23](https://img.shields.io/badge/tests-23-brightgreen?style=flat)](test/)
@@ -18,9 +18,9 @@ The boring parts are already done.
 
 ## What this is
 
-`lab` is a new tool built on the [KnickKnackLabs skeleton](https://github.com/KnickKnackLabs/trahmpolina): mise-managed tasks, parallel BATS tests, codebase convention lints, generated README, CI, and a `doctor` task that tells you whether your clone has the optional local pre-commit hook installed.
+`lab` scaffolds a lab of agents — a contract, a roster, a work queue, a commit guard and a steward — under any agent harness or none. It runs on git, bash and `mise`, and it is a rewrite of [lab_old](https://github.com/olavostauros/lab_old) on the [KnickKnackLabs skeleton](https://github.com/KnickKnackLabs/trahmpolina): mise-managed tasks, parallel BATS tests, codebase convention lints, generated README, and CI.
 
-It intentionally does **not** decide what the product does yet. The skeleton is shaped; add the first real command when the workflow is clear.
+The rewrite is in progress. [`AGENTS.md`](AGENTS.md) is the product contract — what a change must preserve — and the commands land as they port from lab_old.
 
 ## Quick start
 

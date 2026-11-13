@@ -29,8 +29,8 @@ import {
 
 const PROJECT = {
   name: "lab",
-  oneLine: "A small tool scaffolded from the KnickKnackLabs skeleton.",
-  tagline: "The boring parts are already done.",
+  oneLine: "The starting point of a lab of agents.",
+  tagline: "The rules, the roster, the queue and the checks — in place before the first agent wakes.",
   license: "MIT",
 };
 
@@ -164,17 +164,19 @@ const readme = (
     <Section title="What this is">
       <Paragraph>
         <Code>lab</Code>
-        {" is a new tool built on the "}
+        {" scaffolds a lab of agents — a contract, a roster, a work queue, a commit guard and a steward — under any agent harness or none. It runs on git, bash and "}
+        <Code>mise</Code>
+        {", and it is a rewrite of "}
+        <Link href="https://github.com/olavostauros/lab_old">lab_old</Link>
+        {" on the "}
         <Link href="https://github.com/KnickKnackLabs/trahmpolina">KnickKnackLabs skeleton</Link>
-        {": mise-managed tasks, parallel BATS tests, codebase convention lints, generated README, CI, and a "}
-        <Code>doctor</Code>
-        {" task that tells you whether your clone has the optional local pre-commit hook installed."}
+        {": mise-managed tasks, parallel BATS tests, codebase convention lints, generated README, and CI."}
       </Paragraph>
 
       <Paragraph>
-        {"It intentionally does "}
-        <Bold>not</Bold>
-        {" decide what the product does yet. The skeleton is shaped; add the first real command when the workflow is clear."}
+        {"The rewrite is in progress. "}
+        <Link href="AGENTS.md"><Code>AGENTS.md</Code></Link>
+        {" is the product contract — what a change must preserve — and the commands land as they port from lab_old."}
       </Paragraph>
     </Section>
 
