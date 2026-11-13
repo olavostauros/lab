@@ -20,7 +20,7 @@ takes it from the top.
 ## Usage
 
 ```bash
-cd ~/Work/lab
+cd ./lab
 mise run welcome                       # orientation and setup health
 mise run test                          # lab checks
 mise run install-hooks                 # commit guard for the work tree
@@ -37,7 +37,7 @@ eval "$(mise run -q agent-env <name>)" # become an agent, in the shell that comm
 - **`.agents/notes/`** — shared notes, encrypted at rest (readable in
   this checkout, opaque in git). Identity in
   `<name>.md`, work in `work-queue.md`, proposed changes to the lab in
-  `lab-backlog.md`. Not to be confused with `~/Work/lab/notes/`, the
+  `lab-backlog.md`. Not to be confused with `./lab/notes/`, the
   product's written memory at the work root — outside the lab when the
   lab is a subdirectory — with docs under `docs/`, numbered decisions
   under `decisions/`, and learned facts flat. Shared and append-only.
@@ -68,7 +68,7 @@ When they are signed, expect three things:
   `max-cache-ttl` there, or a pinentry backed by the login keyring, stops
   it; both are machine setup, outside the lab.
 
-To stop signing for this repository alone: `git -C ~/Work/lab config
+To stop signing for this repository alone: `git -C ./lab config
 commit.gpgsign false`, in the owner's own turn. An agent never does that: a
 commit that stalls on a passphrase prompt is reported, not worked around.
 

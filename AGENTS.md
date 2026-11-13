@@ -13,17 +13,17 @@ lab is where agents:
 - Return after completing work
 - Rest between sessions
 
-This lab lives **inside** the project it works on: `~/Work/lab` is the root of the `lab` repo, not a repo of its own. Home and work share one git history, so the rules below bind both.
+This lab lives **inside** the project it works on: `./lab` is the root of the `lab` repo, not a repo of its own. Home and work share one git history, so the rules below bind both.
 
 ## Architecture: two places to store things
 
 | | lab (this directory) | Private home repo |
 |---|---|---|
-| Location | `~/Work/lab` — one checkout, shared | `.agents/home/<name>/home/` — inside the lab, git-ignored |
+| Location | `./lab` — one checkout, shared | `.agents/home/<name>/home/` — inside the lab, git-ignored |
 | Visible to | the owner and every agent with access to the work tree | only this machine; never committed, never pushed |
 | Holds | shared notes, identity files, the work queue | canonical `AGENTS.md`, session logs, private memory |
 
-**`~/Work/lab` is a single shared checkout.** Switching its branch moves it
+**`./lab` is a single shared checkout.** Switching its branch moves it
 for every agent at once. Prove the branch in the same command that commits,
 and pull before you work.
 
@@ -137,7 +137,7 @@ No approval needed. Do it on a branch, commit it, report it.
   1 in the code: its free changes are the next four lines.
 - Any note in `.agents/notes/` that states something you have **verified**
   is false — fix the fact and say what the evidence was.
-- A **new** file in `~/Work/lab/notes/` — the product's written memory:
+- A **new** file in `./lab/notes/` — the product's written memory:
   a doc under `docs/` there, a numbered decision, a learned fact — on a
   topic branch. Editing or deleting an existing file there stays Tier 2,
   except a typo or broken-link fix.
@@ -155,11 +155,11 @@ tells you to.
   who an agent is and which tools it gets, wherever that runner keeps it —
   **including your own**. Another agent's definition is Tier 2 in full,
   always.
-- `~/Work/lab/AGENTS.md` — this file, this section included.
+- `./lab/AGENTS.md` — this file, this section included.
 - `.agents/hooks/*`, `.agents/tasks/*`, `mise.toml` and `.agents/roster.tsv`
   — the guard, the task surface, the lab's env, and who counts as an agent.
 - Anything in the work tree **outside** your own directory and this
-  lab's, other than a new file in `~/Work/lab/notes/` — each agent's
+  lab's, other than a new file in `./lab/notes/` — each agent's
   directory is the others' Tier 2. For an agent that owns nothing, every
   directory is Tier 2 but that one exception: a fix it wants is a finding
   or a queue entry for the owner, never a code branch of its own.
@@ -224,7 +224,7 @@ owner's.
 ## Shared notes
 
 `.agents/notes/` holds knowledge useful across agents — not to be confused
-with `~/Work/lab/notes/`, the product's written memory, whose docs live
+with `./lab/notes/`, the product's written memory, whose docs live
 under `docs/` there. Where the two could be confused, the product's memory
 is named by its full path. Your identity file lives at
 `.agents/notes/<your-name>.md`.
@@ -245,7 +245,7 @@ Notes use YAML frontmatter (title, tags, related, created, updated) and
 Each agent gets `.agents/home/<name>/` for hands-on work; the private home
 repo lives at `.agents/home/<name>/home/`. The steward is the lab
 speaking, so its workspace is the lab's own: `.agents/home/steward/`. The
-`~/Work/lab` checkout is shared, not per-agent — see "Architecture"
+`./lab` checkout is shared, not per-agent — see "Architecture"
 above. `.agents/home/` is git-ignored: private to this machine and never
 committed. A credential the owner has granted lives at
 `.agents/home/<name>/.secrets/`, beside the home and never inside it: a
