@@ -46,16 +46,16 @@ The hook lives under `.git/hooks/`, so it is intentionally not tracked by the re
 
 ## Parallel test contract
 
-`mise run test` uses the KKL-maintained Bats fork and Rush with a measured
+`mise run suite` uses the KKL-maintained Bats fork and Rush with a measured
 four-job default. Isolated tests can run concurrently across separate `.bats`
 files and within one file.
 
 Override the measured default when needed:
 
 ```bash
-mise run test --jobs 4
-BATS_NUMBER_OF_PARALLEL_JOBS=2 mise run test
-mise run test --jobs 1  # serial debugging
+mise run suite --jobs 4
+BATS_NUMBER_OF_PARALLEL_JOBS=2 mise run suite
+mise run suite --jobs 1  # serial debugging
 ```
 
 Parallel tests must isolate mutable state per test and process. Prefer
@@ -94,7 +94,7 @@ BATS_NUMBER_OF_PARALLEL_JOBS=1 mise run validate
 This is the before-merge gate. Local development and CI invoke the same task;
 CI uses `--verbose` so detailed failures survive its ephemeral filesystem in the
 ordinary masked job log. The individual commands remain useful for focused work:
-`mise run test`, `codebase lint "$PWD"`, `readme build --check`, and
+`mise run suite`, `codebase lint "$PWD"`, `readme build --check`, and
 `git diff --check`. `doctor` reports setup health, not aggregate acceptance.
 
 The aggregate-gate declaration requires **Codebase 0.5 or later**. A `0.4`
@@ -125,7 +125,7 @@ build-dependent suite should be admitted only after its build succeeds:
 ```bash
 # Include build and tests in checks so skipped work has a NOT-RUN result.
 if run_check build your-build-command; then
-  run_check tests mise run test || failed=1
+  run_check tests mise run suite || failed=1
 else
   failed=1
 fi

@@ -1,6 +1,9 @@
 # Local mise overrides
 mise.local.toml
 
+.obsidian
+.agents/home/
+
 # Editor / OS noise
 .DS_Store
 *.swp

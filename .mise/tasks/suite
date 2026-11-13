@@ -2,10 +2,10 @@
 #MISE description="Run BATS tests"
 #MISE dir="{{config_root}}"
 #USAGE arg "[args]" default="" var=#true help="Test files, directories, or BATS arguments"
-#USAGE example "mise run test" header="Run all tests in parallel across and within files"
-#USAGE example "mise run test test/skeleton.bats" header="Run a specific test file"
-#USAGE example "mise run test --filter doctor" header="Filter tests by name"
-#USAGE example "mise run test --jobs 1" header="Run serially for debugging"
+#USAGE example "mise run suite" header="Run all tests in parallel across and within files"
+#USAGE example "mise run suite test/skeleton.bats" header="Run a specific test file"
+#USAGE example "mise run suite --filter doctor" header="Filter tests by name"
+#USAGE example "mise run suite --jobs 1" header="Run serially for debugging"
 set -euo pipefail
 
 export BATS_DEFAULT_TEST_TARGET="$MISE_CONFIG_ROOT/test"
