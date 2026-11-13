@@ -1,0 +1,2 @@
+notes/**                                 filter=git-crypt diff=git-crypt
+notes/.manifest merge=manifest
