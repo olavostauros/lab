@@ -176,7 +176,7 @@ const readme = (
         {"A "}
         <Bold>lab</Bold>
         {" is a directory where a roster of agents wake, read their rules, take work from a queue, and return. "}
-        <Code>lab init</Code>
+        <Code>lab install</Code>
         {" gives you one, complete: a contract that says what an agent may do without asking and what only you decide, a roster, a work queue, a lab style, a commit guard that refuses an author who is not on the roster, a steward that keeps the record true, and a set of checks. "}
         <Code>lab agent add</Code>
         {" puts an agent on it, and "}
@@ -217,7 +217,7 @@ const readme = (
           {" and "}
           <Code>user.email</Code>
           {" set: "}
-          <Code>lab init</Code>
+          <Code>lab install</Code>
           {" makes a bootstrap commit"}
         </Item>
         <Item>
@@ -338,9 +338,9 @@ cd lab && mise trust && mise install`}</CodeBlock>
         {" command in this README is a "}
         <Code>mise run</Code>
         {" task of this checkout ("}
-        <Code>lab init</Code>
+        <Code>lab install</Code>
         {" is "}
-        <Code>mise run init</Code>
+        <Code>mise run install</Code>
         {", "}
         <Code>lab agent add</Code>
         {" is "}
@@ -351,7 +351,7 @@ cd lab && mise trust && mise install`}</CodeBlock>
         <Code>mise run version</Code>
         {"), which is how CI runs it:"}
       </Paragraph>
-      <CodeBlock lang="bash">{`mise run init example --at /path/to/example`}</CodeBlock>
+      <CodeBlock lang="bash">{`mise run install example --at /path/to/example`}</CodeBlock>
       <Paragraph>
         {"To put a working clone on "}
         <Code>PATH</Code>
@@ -365,14 +365,11 @@ cd lab && mise trust && mise install`}</CodeBlock>
     <Section title="Quick start">
       <Paragraph>
         {"Run "}
-        <Code>lab init</Code>
+        <Code>lab install</Code>
         {" with no name and it asks for each fact it needs — where the lab lives, its name, its owner — scaffolds, then offers the roster, the hooks and a first check. Given a name it asks nothing: the flags are the same facts, and CI never sees a prompt."}
       </Paragraph>
-      <CodeBlock lang="bash">{`# A lab inside the project it works on — AGENTS.md + .agents/ at the repo root
-cd ~/project && lab init example --embedded
-
-# A lab that is a repo of its own and works on other repos
-lab init example --at ~/example --owner 'Your Name'
+      <CodeBlock lang="bash">{`# A lab — a new directory that is a repo of its own
+lab install example --at ~/example --owner 'Your Name'
 
 cd ~/project
 lab agent add builder --role implementation --owns src/ \
@@ -389,37 +386,18 @@ lab doctor            # healthy`}</CodeBlock>
         {" defaults to "}
         <Code>git config user.name</Code>
         {", and "}
-        <Code>init</Code>
+        <Code>install</Code>
         {" fails when neither names anyone: the owner's name is the one fact only the owner can supply."}
       </Paragraph>
 
       <Paragraph>
-        <Code>--embedded</Code>
-        {" with no "}
+        {"Install makes a new directory and a repo of its own: "}
         <Code>--at</Code>
-        {" puts the lab at the project repo's root — "}
-        <Code>AGENTS.md</Code>
-        {" beside the project's own files and "}
-        <Code>.agents/</Code>
-        {" holding the roster, notes, guard and tasks. An existing "}
-        <Code>AGENTS.md</Code>
-        {", "}
-        <Code>mise.toml</Code>
-        {" or "}
-        <Code>.gitignore</Code>
-        {" is kept, never overwritten: "}
-        <Code>init</Code>
-        {" prints what to merge (the markers, the env block, the "}
-        <Code>.agents/secrets/</Code>
-        {" ignore) and "}
-        <Code>lab doctor</Code>
-        {" fails until it is in. The lab's name is "}
+        {" must not exist yet, and an existing directory is refused rather than scaffolded into. The lab's name is "}
         <Code>LAB_NAME</Code>
         {" in its "}
         <Code>mise.toml</Code>
-        {", never the directory's; "}
-        <Code>--at</Code>
-        {" still takes any path inside the repo."}
+        {", never the directory's."}
       </Paragraph>
 
       <Paragraph>
@@ -431,7 +409,7 @@ lab doctor            # healthy`}</CodeBlock>
       </Paragraph>
     </Section>
 
-    <Section title="What init writes">
+    <Section title="What install writes">
       <Table>
         <TableHead>
           <Cell>Path</Cell>
@@ -445,16 +423,14 @@ lab doctor            # healthy`}</CodeBlock>
         ))}
       </Table>
       <Paragraph>
-        {"A standalone lab gets its own repo and a bootstrap commit, which is where the framework's name goes. An embedded lab is a directory of the project repo; you commit it as the owner, and "}
-        <Code>notes/</Code>
-        {" lands at that repo's root rather than inside the lab."}
+        {"Every lab is a repo of its own with a bootstrap commit, which is where the framework's name goes."}
       </Paragraph>
     </Section>
 
     <Section title="What is yours">
       <Paragraph>
         {"The facts: the lab's name and path, the project and the owner, given to "}
-        <Code>init</Code>
+        <Code>install</Code>
         {". The roster, and each agent's role, directory and charge, given to "}
         <Code>agent add</Code>
         {". The loosenings table, one dated row at a time, in your own turn. A granted account, as a row in that table and two files in "}
@@ -494,7 +470,7 @@ lab doctor            # healthy`}</CodeBlock>
 
       <Paragraph>
         {"If your git config signs commits, "}
-        <Code>init</Code>
+        <Code>install</Code>
         {" says so and names the key before the passphrase prompt can appear, and "}
         <Code>--no-commit</Code>
         {" avoids it. Every lab's "}
@@ -510,7 +486,7 @@ lab doctor            # healthy`}</CodeBlock>
         {"Every lab has exactly one, and it is always named "}
         <Code>steward</Code>
         {". "}
-        <Code>init</Code>
+        <Code>install</Code>
         {" adds it; a second one, or one under another name, is refused by "}
         <Code>agent add</Code>
         {" and failed by "}
@@ -619,7 +595,7 @@ lab doctor            # healthy`}</CodeBlock>
         <Item>
           <Bold>The lab is harness-agnostic.</Bold>
           {" "}
-          <Code>init</Code>
+          <Code>install</Code>
           {", "}
           <Code>agent add</Code>
           {" and "}
@@ -633,7 +609,7 @@ lab doctor            # healthy`}</CodeBlock>
         <Item>
           <Bold>A fresh lab is complete.</Bold>
           {" The framework asserts; the owner supplies facts and grants widenings. "}
-          <Code>lab init x && lab doctor --lab x</Code>
+          <Code>lab install x && lab doctor --lab x</Code>
           {" exits 0, and no generated file names a lineage or a runner, or depends on a toolchain outside the "}
           <Code>bats</Code>
           {" pin."}
@@ -656,7 +632,7 @@ lab doctor            # healthy`}</CodeBlock>
       </Table>
       <Paragraph>
         {"Every public task is also a shim command — "}
-        <Code>lab init</Code>
+        <Code>lab install</Code>
         {", "}
         <Code>lab doctor</Code>
         {", "}

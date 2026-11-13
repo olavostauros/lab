@@ -60,7 +60,7 @@ require_lab_tasks() {
 }
 export -f require_lab_tasks
 
-# Minimal stand-ins for the notes toolchain so init/doctor tests run
+# Minimal stand-ins for the notes toolchain so install/doctor tests run
 # offline: `notes setup --dir <d>` writes the git-crypt pattern and the
 # manifest at the repo root, like the real thing, and rudi/git-crypt
 # exist only so `command -v` sees them. Real encryption is exercised by

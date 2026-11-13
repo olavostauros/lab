@@ -23,9 +23,9 @@ say ""
 version="$(bash_version)"
 if version_at_least "$version" 4; then ok "bash $version"; else fail "bash $version: lab needs bash 4 or newer first on PATH"; fi
 version="$(git_version)"
-if version_at_least "$version" 2.28; then ok "git $version"; else fail "git $version: lab init needs git 2.28 or newer for git init -b"; fi
+if version_at_least "$version" 2.28; then ok "git $version"; else fail "git $version: lab install needs git 2.28 or newer for git init -b"; fi
 for key in name email; do
-  if git_identity "$WORK" "$key"; then ok "git user.$key"; else fail "git user.$key is unset, so lab init cannot commit → git config --global user.$key '…'"; fi
+  if git_identity "$WORK" "$key"; then ok "git user.$key"; else fail "git user.$key is unset, so lab install cannot commit → git config --global user.$key '…'"; fi
 done
 if command -v mise >/dev/null 2>&1; then ok "mise on PATH"; else fail "mise is not on PATH, and every lab command runs through it → put the directory holding mise on PATH"; fi
 if [ -n "${LAB_CALLER_PWD:-}" ]; then

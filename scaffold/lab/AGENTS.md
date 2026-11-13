@@ -13,7 +13,9 @@ here, and nothing here governs another lab.
 - Return after completing work
 - Rest between sessions
 
-{{PLACEMENT}}
+This lab is a repository of its own. The work happens in other
+repositories, cloned into each agent's workspace; the lab is where the
+rules, the queue and the record of that work are kept.
 
 ## Architecture: one place to store things
 

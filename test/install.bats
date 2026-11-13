@@ -6,9 +6,9 @@ setup() {
   lab_setup
 }
 
-@test "init scaffolds a standalone lab with its own repo and a bootstrap commit" {
-  require_lab_tasks init
-  run lab init hearth --at "$BATS_TEST_TMPDIR/hearth"
+@test "install scaffolds a standalone lab with its own repo and a bootstrap commit" {
+  require_lab_tasks install
+  run lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
   assert_success
   assert_output_contains "create: AGENTS.md"
   assert_output_contains "commit: bootstrap the lab"
@@ -28,9 +28,9 @@ setup() {
   [ -z "$(git -C "$h" status --porcelain)" ]
 }
 
-@test "init renders the lab name into the contract, the guard and the env" {
-  require_lab_tasks init
-  lab init hearth --at "$BATS_TEST_TMPDIR/hearth"
+@test "install renders the lab name into the contract, the guard and the env" {
+  require_lab_tasks install
+  lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
   h="$BATS_TEST_TMPDIR/hearth"
   assert_file_contains "$h/AGENTS.md" "# hearth"
   assert_file_contains "$h/AGENTS.md" "HEARTH_OWNER_COMMIT=1"
@@ -41,109 +41,37 @@ setup() {
   ! grep -rq '{{LAB' "$h/.agents"
 }
 
-@test "init --embedded with no --at puts the lab at the project repo's root" {
-  require_lab_tasks init
-  project="$(make_project)"
-  CALLER="$project" run lab init hall --embedded
-  assert_success
-  assert_output_contains "keep: README.md"
-  assert_output_contains "next: review the new files"
-  [ -f "$project/AGENTS.md" ]
-  [ -f "$project/.agents/roster.tsv" ]
-  [ ! -d "$project/.agents/.git" ]
-  assert_file_contains "$project/mise.toml" 'LAB_NAME = "hall"'
-  assert_file_contains "$project/mise.toml" 'LAB_PROJECT = "project"'
-  assert_file_contains "$project/mise.toml" 'WORK_DIR = "{{ config_root }}"'
-  assert_file_contains "$project/AGENTS.md" "lives **inside** the project"
-  assert_file_contains "$project/AGENTS.md" "is the root of the \`project\` repo"
-  [ -n "$(git -C "$project" status --porcelain)" ]
-  [ -f "$project/.agents/notes/steward-home.md" ]
-  [ -f "$project/notes/README.md" ]
-}
-
-@test "init --embedded --at puts the lab in a subdirectory of the project repo" {
-  require_lab_tasks init
-  project="$(make_project)"
-  run lab init hall --at "$project/hall" --embedded
-  assert_success
-  [ ! -d "$project/hall/.git" ]
-  assert_file_contains "$project/hall/mise.toml" 'WORK_DIR = "{{ config_root }}/.."'
-  assert_file_contains "$project/hall/mise.toml" 'LAB_PROJECT = "project"'
-  assert_file_contains "$project/hall/AGENTS.md" "is a directory of the \`project\` repo"
-  [ -n "$(git -C "$project" status --porcelain -- hall)" ]
-  [ -f "$project/hall/.agents/notes/steward-home.md" ]
-  [ -f "$project/notes/README.md" ]
-  [ ! -e "$project/hall/notes" ]
-}
-
-@test "init --embedded says how a top-level docs/ moves under notes/" {
-  require_lab_tasks init
-  project="$(make_project)"
-  mkdir "$project/docs"
-  printf 'docs\n' > "$project/docs/BRIEF.md"
-  git -C "$project" -c commit.gpgsign=false add docs && git -C "$project" -c commit.gpgsign=false commit -qm docs
-  CALLER="$project" run lab init hall --embedded
-  assert_success
-  assert_output_contains "docs/ at the work root is the older layout"
-  assert_output_contains "git -C $project mv docs notes/"
-  [ -d "$project/docs" ]
-  [ -f "$project/notes/README.md" ]
-}
-
-@test "init --embedded refuses a parent that is not a git repository" {
-  require_lab_tasks init
-  run lab init hall --at "$BATS_TEST_TMPDIR/loose/hall" --embedded
-  assert_failure
-  assert_output_contains "--embedded needs"
-}
-
-@test "init --embedded keeps a pre-existing AGENTS.md and mise.toml and says what to merge" {
-  require_lab_tasks init doctor
-  project="$(make_project)"
-  printf 'ours\n' > "$project/AGENTS.md"
-  printf '[env]\nFOO = "1"\n' > "$project/mise.toml"
-  CALLER="$project" run lab init hall --embedded
-  assert_success
-  assert_output_contains "keep: AGENTS.md"
-  assert_output_contains "keep: mise.toml"
-  assert_output_contains "note: AGENTS.md is pre-existing"
-  assert_output_contains "note: mise.toml is pre-existing"
-  [ "$(cat "$project/AGENTS.md")" = "ours" ]
-  run lab doctor --lab "$project"
-  assert_failure
-  assert_output_contains "lacks marker <!-- lab:roster -->"
-  assert_output_contains "mise.toml lacks the LAB_* env"
-}
-
-@test "init --project names what the lab works on" {
-  require_lab_tasks init
-  lab init hearth --at "$BATS_TEST_TMPDIR/hearth" --project "Evento Livre"
+@test "install --project names what the lab works on" {
+  require_lab_tasks install
+  lab install hearth --at "$BATS_TEST_TMPDIR/hearth" --project "Evento Livre"
   assert_file_contains "$BATS_TEST_TMPDIR/hearth/AGENTS.md" "agents of **Evento Livre**"
   assert_file_contains "$BATS_TEST_TMPDIR/hearth/mise.toml" 'LAB_PROJECT = "Evento Livre"'
 }
 
-@test "init keeps existing files and reports them" {
-  require_lab_tasks init
+@test "install refuses an existing path — it makes a new directory" {
+  require_lab_tasks install
   h="$BATS_TEST_TMPDIR/hearth"
   mkdir -p "$h"
-  printf 'mine\n' > "$h/README.md"
-  run lab init hearth --at "$h" --no-commit
-  assert_success
-  assert_output_contains "keep: README.md"
-  [ "$(cat "$h/README.md")" = "mine" ]
+  run lab install hearth --at "$h"
+  assert_failure
+  assert_output_contains "already exists"
+  printf 'mine\n' > "$BATS_TEST_TMPDIR/plain-file"
+  run lab install hearth --at "$BATS_TEST_TMPDIR/plain-file"
+  assert_failure
+  assert_output_contains "already exists"
 }
 
-@test "init rejects a name that is not lowercase-kebab" {
-  require_lab_tasks init
-  run lab init Hearth --at "$BATS_TEST_TMPDIR/x"
+@test "install rejects a name that is not lowercase-kebab" {
+  require_lab_tasks install
+  run lab install Hearth --at "$BATS_TEST_TMPDIR/x"
   assert_failure
-  run lab init "my lab" --at "$BATS_TEST_TMPDIR/y"
+  run lab install "my lab" --at "$BATS_TEST_TMPDIR/y"
   assert_failure
 }
 
 @test "a fresh lab passes its own checks" {
-  require_lab_tasks init
-  lab init hearth --at "$BATS_TEST_TMPDIR/hearth"
+  require_lab_tasks install
+  lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
   run in_lab "$BATS_TEST_TMPDIR/hearth" test
   assert_success
   assert_output_contains "== bats =="
@@ -151,8 +79,8 @@ setup() {
 }
 
 @test "a fresh lab's welcome reports the steward on the roster and a missing guard" {
-  require_lab_tasks init
-  lab init hearth --at "$BATS_TEST_TMPDIR/hearth"
+  require_lab_tasks install
+  lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
   run env -u GIT_AUTHOR_NAME bash -c 'in_lab "$@"' _ "$BATS_TEST_TMPDIR/hearth" welcome
   assert_success
   assert_output_contains "not activated"
@@ -161,10 +89,10 @@ setup() {
   assert_output_contains "nothing queued"
 }
 
-@test "init names the signing key before the bootstrap commit when the git config signs" {
-  require_lab_tasks init
+@test "install names the signing key before the bootstrap commit when the git config signs" {
+  require_lab_tasks install
   signing_env
-  run lab init hearth --at "$BATS_TEST_TMPDIR/hearth"
+  run lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
   assert_success
   assert_output_contains "sign: the bootstrap commit is signed (openpgp, key 0123456789ABCDEF)"
   assert_output_contains "--no-commit leaves the files"
@@ -173,30 +101,30 @@ setup() {
   git -C "$BATS_TEST_TMPDIR/hearth" cat-file commit HEAD | grep -q '^gpgsig '
 }
 
-@test "init names the committer identity when the config signs with no user.signingkey" {
-  require_lab_tasks init
+@test "install names the committer identity when the config signs with no user.signingkey" {
+  require_lab_tasks install
   signing_env
   export GIT_CONFIG_COUNT=3
-  run lab init hearth --at "$BATS_TEST_TMPDIR/hearth"
+  run lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
   assert_success
   assert_output_contains "sign: the bootstrap commit is signed (openpgp, no user.signingkey — picked by the committer identity lab test <lab-test@example.invalid>)"
 }
 
-@test "init says nothing about signing when commits are unsigned or --no-commit" {
-  require_lab_tasks init
-  run lab init hearth --at "$BATS_TEST_TMPDIR/hearth"
+@test "install says nothing about signing when commits are unsigned or --no-commit" {
+  require_lab_tasks install
+  run lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
   assert_success
   ! [[ "$output" == *"sign:"* ]]
   signing_env
-  run lab init hall --at "$BATS_TEST_TMPDIR/hall" --no-commit
+  run lab install hall --at "$BATS_TEST_TMPDIR/hall" --no-commit
   assert_success
   ! [[ "$output" == *"sign:"* ]]
   [ ! -e "$FAKE_GPG_LOG" ]
 }
 
 @test "welcome reports the signing state, the key, and that an agent signs as the owner" {
-  require_lab_tasks init
-  lab init hearth --at "$BATS_TEST_TMPDIR/hearth"
+  require_lab_tasks install
+  lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
   run in_lab "$BATS_TEST_TMPDIR/hearth" welcome
   assert_success
   assert_output_contains "== signing =="
@@ -214,8 +142,8 @@ setup() {
 }
 
 @test "the lab README and the steward's home note say what a signing machine means" {
-  require_lab_tasks init
-  lab init hearth --at "$BATS_TEST_TMPDIR/hearth"
+  require_lab_tasks install
+  lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
   h="$BATS_TEST_TMPDIR/hearth"
   assert_file_contains "$h/README.md" "## Signing"
   assert_file_contains "$h/README.md" "signed with the owner's key"
@@ -226,8 +154,8 @@ setup() {
 }
 
 @test "install-hooks wires the guard into the work tree and the guard refuses the owner" {
-  require_lab_tasks init
-  lab init hearth --at "$BATS_TEST_TMPDIR/hearth"
+  require_lab_tasks install
+  lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
   h="$BATS_TEST_TMPDIR/hearth"
   run in_lab "$h" install-hooks
   assert_success
@@ -243,9 +171,9 @@ setup() {
   assert_success
 }
 
-@test "init ships a steward by default, homed inside the lab, with no GitHub identity and no mail" {
-  require_lab_tasks init
-  lab init hearth --at "$BATS_TEST_TMPDIR/hearth"
+@test "install ships a steward by default, homed inside the lab, with no GitHub identity and no mail" {
+  require_lab_tasks install
+  lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
   h="$BATS_TEST_TMPDIR/hearth"
   grep -q $'^steward\tstewardship\t\tsteward$' "$h/.agents/roster.tsv"
   assert_file_contains "$h/AGENTS.md" "- **steward** — stewardship. Owns no directory."
@@ -267,27 +195,27 @@ setup() {
 }
 
 @test "two labs may share a name on one machine, and each keeps its own steward" {
-  require_lab_tasks init
-  lab init hearth --at "$BATS_TEST_TMPDIR/one/hearth"
-  run lab init hearth --at "$BATS_TEST_TMPDIR/two/hearth"
+  require_lab_tasks install
+  lab install hearth --at "$BATS_TEST_TMPDIR/one/hearth"
+  run lab install hearth --at "$BATS_TEST_TMPDIR/two/hearth"
   assert_success
   [ -f "$BATS_TEST_TMPDIR/one/hearth/.agents/notes/steward-home.md" ]
   [ -f "$BATS_TEST_TMPDIR/two/hearth/.agents/notes/steward-home.md" ]
 }
 
 @test "two labs on one machine each keep their own steward" {
-  require_lab_tasks init
-  lab init hearth --at "$BATS_TEST_TMPDIR/hearth"
-  run lab init hall --at "$BATS_TEST_TMPDIR/hall"
+  require_lab_tasks install
+  lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
+  run lab install hall --at "$BATS_TEST_TMPDIR/hall"
   assert_success
   [ -f "$BATS_TEST_TMPDIR/hearth/.agents/notes/steward-home.md" ]
   [ -f "$BATS_TEST_TMPDIR/hall/.agents/notes/steward-home.md" ]
   grep -q '^steward' "$BATS_TEST_TMPDIR/hall/.agents/roster.tsv"
 }
 
-@test "init keys the lab by its name, not by the basename of --at" {
-  require_lab_tasks init agent/add doctor
-  lab init hearth --at "$BATS_TEST_TMPDIR/project/lab"
+@test "install keys the lab by its name, not by the basename of --at" {
+  require_lab_tasks install agent/add doctor
+  lab install hearth --at "$BATS_TEST_TMPDIR/project/lab"
   h="$BATS_TEST_TMPDIR/project/lab"
   assert_file_contains "$h/mise.toml" 'LAB_NAME = "hearth"'
   [ -f "$h/.agents/notes/steward-home.md" ]
@@ -299,8 +227,8 @@ setup() {
 }
 
 @test "the steward's guard and env work like any agent's, and welcome points at its home" {
-  require_lab_tasks init
-  lab init hearth --at "$BATS_TEST_TMPDIR/hearth"
+  require_lab_tasks install
+  lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
   h="$BATS_TEST_TMPDIR/hearth"
   run env -u LAB_DIR -u HEARTH_OWNER_COMMIT GIT_AUTHOR_NAME=steward "$h/.agents/hooks/agent-identity"
   assert_success
@@ -312,19 +240,19 @@ setup() {
   assert_output_contains "home: .agents/notes/steward-home.md"
 }
 
-@test "init encrypts the lab's .agents/notes at rest, at the work root" {
-  require_lab_tasks init doctor
-  project="$(make_project)"
-  lab init hall --at "$project/labs/hall" --embedded
-  assert_file_contains "$project/.gitattributes" 'labs/hall/.agents/notes/** filter=git-crypt'
-  [ -f "$project/labs/hall/.agents/notes/.manifest" ]
-  run lab doctor --lab "$project/labs/hall"
-  assert_output_contains "ok:   labs/hall/.agents/notes encrypts at rest"
+@test "install encrypts the lab's .agents/notes at rest" {
+  require_lab_tasks install doctor
+  lab install hall --at "$BATS_TEST_TMPDIR/hall"
+  h="$BATS_TEST_TMPDIR/hall"
+  assert_file_contains "$h/.gitattributes" '.agents/notes/** filter=git-crypt'
+  [ -f "$h/.agents/notes/.manifest" ]
+  run lab doctor --lab "$h"
+  assert_output_contains "ok:   .agents/notes encrypts at rest"
 }
 
 @test "install-hooks hangs the guard off the notes dispatcher and patches --dir once" {
-  require_lab_tasks init
-  lab init hearth --at "$BATS_TEST_TMPDIR/hearth"
+  require_lab_tasks install
+  lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
   h="$BATS_TEST_TMPDIR/hearth"
   mkdir -p "$h/.git/hooks/pre-commit.d"
   printf 'NOTES_ROOT=".agents/notes"\n      run_notes obfuscate "${unobfuscated[@]}" >&2\n' \
@@ -337,8 +265,8 @@ setup() {
   [ "$(grep -c -- '--dir' "$h/.git/hooks/pre-commit.d/obfuscation")" -eq 1 ]
 }
 
-@test "init with no name asks for the facts and scaffolds a standalone lab" {
-  require_lab_tasks init
+@test "install with no name asks for the facts and scaffolds a standalone lab" {
+  require_lab_tasks install
   answers="$BATS_TEST_TMPDIR/answers"
   printf '%s\n' \
     "BAD NAME" \
@@ -348,20 +276,18 @@ setup() {
     "" \
     "y" \
     "n" "n" "n" "n" > "$answers"
-  CALLER="$BATS_TEST_TMPDIR/caller" LAB_PROMPT_TTY="$answers" run lab init
+  CALLER="$BATS_TEST_TMPDIR/caller" LAB_PROMPT_TTY="$answers" run lab install
   assert_success
   assert_output_contains "commit: bootstrap the lab"
   assert_output_contains "done: hearth at"
   [ -f "$BATS_TEST_TMPDIR/hearth/.agents/roster.tsv" ]
 }
 
-@test "init with no name asks, scaffolds an embedded lab and puts an agent on the roster" {
-  require_lab_tasks init
-  project="$(make_project)"
+@test "install with no name asks, scaffolds a lab and puts an agent on the roster" {
+  require_lab_tasks install
   answers="$BATS_TEST_TMPDIR/answers"
   printf '%s\n' \
-    "1" \
-    "" \
+    "hall" \
     "" \
     "" \
     "" \
@@ -374,32 +300,32 @@ setup() {
     "" \
     "n" \
     "n" "n" "n" > "$answers"
-  CALLER="$project" LAB_PROMPT_TTY="$answers" run lab init
+  CALLER="$BATS_TEST_TMPDIR/caller" LAB_PROMPT_TTY="$answers" run lab install
   assert_success
-  [ -f "$project/AGENTS.md" ]
-  assert_file_contains "$project/.agents/roster.tsv" "vulcan"
-  [ -f "$project/.agents/notes/vulcan.md" ]
+  h="$BATS_TEST_TMPDIR/caller/hall"
+  [ -f "$h/AGENTS.md" ]
+  assert_file_contains "$h/.agents/roster.tsv" "vulcan"
+  [ -f "$h/.agents/notes/vulcan.md" ]
 }
 
-@test "init with no name honors flags already given in guided mode" {
-  require_lab_tasks init
-  project="$(make_project)"
+@test "install with no name honors flags already given in guided mode" {
+  require_lab_tasks install
   answers="$BATS_TEST_TMPDIR/answers"
   printf '%s\n' \
-    "" \
-    "" \
+    "hall" \
     "" \
     "" \
     "y" \
     "n" "n" "n" "n" > "$answers"
-  CALLER="$project" LAB_PROMPT_TTY="$answers" run lab init --embedded
+  CALLER="$BATS_TEST_TMPDIR/caller" LAB_PROMPT_TTY="$answers" run lab install --project "the forge"
   assert_success
-  [ -f "$project/.agents/roster.tsv" ]
-  assert_file_contains "$project/AGENTS.md" "inside"
+  h="$BATS_TEST_TMPDIR/caller/hall"
+  assert_file_contains "$h/AGENTS.md" "agents of **the forge**"
+  [ -f "$h/.agents/roster.tsv" ]
 }
 
-@test "init with no name writes nothing when the owner declines" {
-  require_lab_tasks init
+@test "install with no name writes nothing when the owner declines" {
+  require_lab_tasks install
   answers="$BATS_TEST_TMPDIR/answers"
   printf '%s\n' \
     "hearth" \
@@ -407,24 +333,24 @@ setup() {
     "" \
     "" \
     "n" > "$answers"
-  CALLER="$BATS_TEST_TMPDIR/caller" LAB_PROMPT_TTY="$answers" run lab init
+  CALLER="$BATS_TEST_TMPDIR/caller" LAB_PROMPT_TTY="$answers" run lab install
   assert_failure
   assert_output_contains "nothing written"
   [ ! -e "$BATS_TEST_TMPDIR/hearth" ]
 }
 
-@test "init with no name and nothing to ask explains itself" {
-  require_lab_tasks init
+@test "install with no name and nothing to ask explains itself" {
+  require_lab_tasks install
   : > "$BATS_TEST_TMPDIR/answers"
-  CALLER="$BATS_TEST_TMPDIR/caller" LAB_PROMPT_TTY="$BATS_TEST_TMPDIR/answers" run lab init
+  CALLER="$BATS_TEST_TMPDIR/caller" LAB_PROMPT_TTY="$BATS_TEST_TMPDIR/answers" run lab install
   assert_failure
   assert_output_contains "it needs a terminal, or answers on stdin"
 }
 
-@test "init with no name inside a lab points at it instead of nesting" {
-  require_lab_tasks init
-  lab init hearth --at "$BATS_TEST_TMPDIR/hearth"
-  CALLER="$BATS_TEST_TMPDIR/hearth" run lab init
+@test "install with no name inside a lab points at it instead of nesting" {
+  require_lab_tasks install
+  lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
+  CALLER="$BATS_TEST_TMPDIR/hearth" run lab install
   assert_success
   assert_output_contains "already the hearth lab"
 }

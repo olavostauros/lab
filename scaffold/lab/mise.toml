@@ -2,7 +2,7 @@
 LAB_NAME = "{{LAB_NAME}}"
 LAB_PROJECT = "{{PROJECT}}"
 LAB_DIR = "{{ config_root }}"
-WORK_DIR = "{{WORK_DIR_EXPR}}"
+WORK_DIR = "{{ config_root }}"
 LAB_AUTHOR_DOMAIN = "{{AUTHOR_DOMAIN}}"
 # The owner's GitHub email (the noreply address works): agent-env stamps it,
 # so commits link to that account under each agent's name; empty keeps the label.

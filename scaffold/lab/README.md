@@ -56,7 +56,7 @@ When they are signed, expect three things:
 
 - **A passphrase prompt during a `lab` command or a commit is for that
   key.** The dialog is GnuPG's: it names the key and not the terminal that
-  asked. `lab init` says so before its bootstrap commit; nothing else
+  asked. `lab install` says so before its bootstrap commit; nothing else
   in the lab opens one on its own.
 - **An agent's commit is signed with the owner's key.** `agent-env` sets
   the author and committer only, so a commit made as an agent is authored

@@ -3,14 +3,14 @@
 load test_helper
 
 setup() {
-  require_lab_tasks init doctor
+  require_lab_tasks install doctor
   lab_setup
-  # lab_setup fakes user.name through GIT_CONFIG_COUNT so init can commit;
+  # lab_setup fakes user.name through GIT_CONFIG_COUNT so install can commit;
   # doctor's identity checks read `git config`, which that override would
   # answer — drop it so the -u probes below see the real config.
   unset GIT_CONFIG_COUNT GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0
   H="$BATS_TEST_TMPDIR/hearth"
-  lab init hearth --at "$H" --owner "$GIT_AUTHOR_NAME" >/dev/null
+  lab install hearth --at "$H" --owner "$GIT_AUTHOR_NAME" >/dev/null
   in_lab "$H" install-hooks >/dev/null
   BIN="$BATS_TEST_TMPDIR/bin"
   mkdir -p "$BIN"
@@ -52,8 +52,8 @@ doctor_directly_with() {
 @test "doctor fails without a git identity, naming the key to set" {
   doctor_with -u GIT_AUTHOR_NAME -u GIT_AUTHOR_EMAIL -u GIT_COMMITTER_NAME -u GIT_COMMITTER_EMAIL
   assert_failure
-  assert_output_contains "fail: git user.name is unset, so lab init cannot commit → git config --global user.name"
-  assert_output_contains "fail: git user.email is unset, so lab init cannot commit → git config --global user.email"
+  assert_output_contains "fail: git user.name is unset, so lab install cannot commit → git config --global user.name"
+  assert_output_contains "fail: git user.email is unset, so lab install cannot commit → git config --global user.email"
   assert_output_contains "doctor: 2 failing"
   git -C "$H" config user.name "Ada"
   git -C "$H" config user.email "ada@example.invalid"
@@ -82,7 +82,7 @@ doctor_directly_with() {
   doctor_with PATH="$BIN:$PATH"
   assert_failure
   assert_output_contains "fail: bash 3.2.57: lab needs bash 4 or newer first on PATH"
-  assert_output_contains "fail: git 2.20.1: lab init needs git 2.28 or newer for git init -b"
+  assert_output_contains "fail: git 2.20.1: lab install needs git 2.28 or newer for git init -b"
   assert_output_contains "doctor: 2 failing"
 }
 

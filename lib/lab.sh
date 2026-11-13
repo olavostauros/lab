@@ -124,7 +124,8 @@ lab_work_dir() {
 }
 
 # The lab's .agents/notes, relative to the work repo root — the dir notes
-# encrypts (its --dir is repo-relative, and an embedded lab is a subdir).
+# encrypts (its --dir is repo-relative; a lab made before the install task
+# was the only shape could be a subdir of its work repo).
 notes_dir_rel() {
   local lab="$1" work="$2" rel
   rel="${lab#"$work"}"

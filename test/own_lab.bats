@@ -6,7 +6,7 @@ listed_names() {
   awk -v kind="${1:-}" 'kind == "" || $1 == kind { print $2 }' "$REPO_DIR/lib/lineage-names" | paste -sd '|'
 }
 
-LAB_KEYS="LAB_NAME LAB_UPPER LAB_PATH WORK_PATH WORK_DIR_EXPR PROJECT CREATED FRAMEWORK_VERSION OWNER AUTHOR_DOMAIN PLACEMENT"
+LAB_KEYS="LAB_NAME LAB_UPPER LAB_PATH WORK_PATH PROJECT CREATED FRAMEWORK_VERSION OWNER AUTHOR_DOMAIN"
 AGENT_KEYS="AGENT ROLE OWNS CHARGE HOME_NOTE SCRATCHPAD_NOTE"
 
 setup() {
@@ -66,9 +66,9 @@ setup() {
 }
 
 @test "a fresh lab names no lineage, no runner and no mail domain, and keeps one line of attribution" {
-  require_lab_tasks init agent/add version
+  require_lab_tasks install agent/add version
   h="$BATS_TEST_TMPDIR/hearth"
-  lab init hearth --at "$h"
+  lab install hearth --at "$h"
   lab agent add vulcan --lab "$h" --role backend --owns server/ >/dev/null
   lab agent add argus --lab "$h" --role review >/dev/null
   run bash -c "grep -rniwE '$LINEAGE' --exclude-dir=.git --exclude=mise.toml '$h' | grep -vE 'olavostauros/lab([^a-z0-9-]|$)'"
@@ -88,9 +88,9 @@ setup() {
 }
 
 @test "the fresh contract holds the authority sections and three guard rules, asserts the merge rule, and wires the lab style" {
-  require_lab_tasks init
+  require_lab_tasks install
   h="$BATS_TEST_TMPDIR/hearth"
-  lab init hearth --at "$h"
+  lab install hearth --at "$h"
   run sed -nE 's/^\*\*([^*]+)(\*\*.*)?$/\1/p' "$h/AGENTS.md"
   expected="\`$h\` is a single shared checkout.
 Own your commits.
@@ -119,14 +119,14 @@ Notes are encrypted at rest."
   ! grep -q '{{' "$h/.agents/notes/lab-style.md"
 }
 
-@test "init renders --owner into the contract, falls back to git user.name, and fails when nobody is named" {
-  require_lab_tasks init
+@test "install renders --owner into the contract, falls back to git user.name, and fails when nobody is named" {
+  require_lab_tasks install
   h="$BATS_TEST_TMPDIR/hearth"
-  lab init hearth --at "$h" --owner "Ada"
+  lab install hearth --at "$h" --owner "Ada"
   assert_file_contains "$h/AGENTS.md" "The owner is **Ada**: the one human here, who files the queue, merges,"
-  lab init hall --at "$BATS_TEST_TMPDIR/hall"
+  lab install hall --at "$BATS_TEST_TMPDIR/hall"
   assert_file_contains "$BATS_TEST_TMPDIR/hall/AGENTS.md" "The owner is **lab test**: the one human here"
-  run env GIT_CONFIG_COUNT=0 bash -c 'lab "$@"' _ init keep --at "$BATS_TEST_TMPDIR/keep"
+  run env GIT_CONFIG_COUNT=0 bash -c 'lab "$@"' _ install keep --at "$BATS_TEST_TMPDIR/keep"
   assert_failure
   assert_output_contains "the owner has no name: pass --owner '<name>', or set git config user.name"
   [ ! -e "$BATS_TEST_TMPDIR/keep/AGENTS.md" ]
@@ -134,9 +134,9 @@ Notes are encrypted at rest."
 }
 
 @test "a fresh lab, with a builder and a judge, asks the owner nothing, carries no key, and is healthy" {
-  require_lab_tasks init agent/add doctor
+  require_lab_tasks install agent/add doctor
   h="$BATS_TEST_TMPDIR/hearth"
-  lab init hearth --at "$h"
+  lab install hearth --at "$h"
   lab agent add vulcan --lab "$h" --role backend --owns server/ >/dev/null
   lab agent add argus --lab "$h" --role review >/dev/null
   run grep -rl 'lab:decide' --exclude-dir=.git "$h"

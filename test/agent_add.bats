@@ -5,11 +5,11 @@ load test_helper
 setup() {
   lab_setup
   H="$BATS_TEST_TMPDIR/hearth"
-  lab init hearth --at "$H" --project "the forge" >/dev/null
+  lab install hearth --at "$H" --project "the forge" >/dev/null
 }
 
 @test "a fresh lab already has its steward, and there is one per lab under one name" {
-  require_lab_tasks init agent/add
+  require_lab_tasks install agent/add
   grep -q $'^steward\tstewardship\t\tsteward$' "$H/.agents/roster.tsv"
   assert_file_contains "$H/.agents/notes/steward.md" "The steward of the forge"
   assert_file_contains "$H/.agents/notes/steward-home.md" "the steward of **the forge**"
@@ -27,7 +27,7 @@ setup() {
 }
 
 @test "agent add puts a builder on the roster with note and home, and no harness file" {
-  require_lab_tasks init agent/add
+  require_lab_tasks install agent/add
   run lab agent add vulcan --lab "$H" --role backend --owns server/ --charge "Owns the schema and the API."
   assert_success
   assert_output_contains "roster: vulcan (builder)"
@@ -55,7 +55,7 @@ setup() {
 }
 
 @test "agent add without --owns makes a judge" {
-  require_lab_tasks init agent/add
+  require_lab_tasks install agent/add
   run lab agent add argus --lab "$H" --role "review and security"
   assert_success
   assert_output_contains "roster: argus (judge)"
@@ -71,7 +71,7 @@ setup() {
 }
 
 @test "agent add refuses a duplicate and an agent with no role" {
-  require_lab_tasks init agent/add
+  require_lab_tasks install agent/add
   lab agent add vulcan --lab "$H" --role backend --owns server/
   run lab agent add vulcan --lab "$H" --role backend --owns server/
   assert_failure
@@ -82,7 +82,7 @@ setup() {
 }
 
 @test "agent add keeps home notes that exist" {
-  require_lab_tasks init agent/add
+  require_lab_tasks install agent/add
   printf 'mine\n' > "$H/.agents/notes/apollo-home.md"
   run lab agent add apollo --lab "$H" --role music
   assert_success
@@ -91,7 +91,7 @@ setup() {
 }
 
 @test "after agent add the lab's own checks and guard know the new agent" {
-  require_lab_tasks init agent/add
+  require_lab_tasks install agent/add
   lab agent add vulcan --lab "$H" --role backend --owns server/
   lab agent add argus --lab "$H" --role review
   run in_lab "$H" test
@@ -109,7 +109,7 @@ setup() {
 }
 
 @test "agent add resolves the lab from the caller's directory" {
-  require_lab_tasks init agent/add
+  require_lab_tasks install agent/add
   export CALLER="$H"
   run lab agent add vulcan --role backend --owns server/
   assert_success
@@ -117,14 +117,14 @@ setup() {
 }
 
 @test "agent add rejects a directory that is not a lab" {
-  require_lab_tasks init agent/add
+  require_lab_tasks install agent/add
   run lab agent add vulcan --lab "$BATS_TEST_TMPDIR" --role backend
   assert_failure
   assert_output_contains "not a lab"
 }
 
 @test "agent add renders a charge with an ampersand verbatim" {
-  require_lab_tasks init agent/add
+  require_lab_tasks install agent/add
   run lab agent add caesar --lab "$H" --role payments --owns payments/ --charge 'Takes money & refunds it.'
   assert_success
   assert_file_contains "$H/AGENTS.md" "Takes money & refunds it."

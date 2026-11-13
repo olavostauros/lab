@@ -8,17 +8,17 @@ steward.
 
 This repository is the tool, not a lab: it has no `.agents/` of its own,
 no roster and no contract. The lab architecture lives in `scaffold/`,
-rendered into a target repo by `lab init`.
+rendered into a new directory by `lab install`, which `git init`s it.
 
 ## Layout
 
-- `.mise/tasks/` — the public command surface (`init`, `agent add`,
+- `.mise/tasks/` — the public command surface (`install`, `agent add`,
   `agent home`, `doctor`, `version`) plus dev tasks (`test`, `validate`,
   `suite` is `test`). Each task is a thin executable that sources
   `lib/lab.sh`.
 - `lib/` — shared Bash. `lab.sh` holds the domain contract; keep tasks
   command-shaped and put shared logic here.
-- `scaffold/` — the payload `lab init` installs: `scaffold/lab/` becomes
+- `scaffold/` — the payload `lab install` writes: `scaffold/lab/` becomes
   the lab's root, `scaffold/agent/` renders per-agent notes,
   `scaffold/work/` lands at the work-repo root.
 - `test/` — BATS. Tests call tasks through `mise run`, never raw scripts.
@@ -27,23 +27,21 @@ rendered into a target repo by `lab init`.
 
 ## The render contract
 
-`scaffold/` files are templates: `init` and `agent` substitute `{{KEY}}`
+`scaffold/` files are templates: `install` and `agent` substitute `{{KEY}}`
 placeholders via `render` in `lib/lab.sh`. Every placeholder is a fact the
 tool computes; a scaffold may not ask the owner for one.
 
-Lab facts, rendered by `lab init`:
+Lab facts, rendered by `lab install`:
 
 - `{{LAB_NAME}}` — the lab's name, lowercase
 - `{{LAB_UPPER}}` — the name uppercased, for env var prefixes
 - `{{LAB_PATH}}` — where the lab lives
 - `{{WORK_PATH}}` — the work repo root the lab governs
-- `{{WORK_DIR_EXPR}}` — the `mise.toml` expression resolving the work root
 - `{{PROJECT}}` — what the lab works on
 - `{{CREATED}}` — the date the lab was made
-- `{{FRAMEWORK_VERSION}}` — the tag or commit of this tool at init time
+- `{{FRAMEWORK_VERSION}}` — the tag or commit of this tool at install time
 - `{{OWNER}}` — the owner's name as it appears in the contract
 - `{{AUTHOR_DOMAIN}}` — the `<name>@<lab>.invalid` author label domain
-- `{{PLACEMENT}}` — the paragraph describing embedded vs standalone
 
 Agent facts, rendered by `lab agent add|home`:
 
@@ -55,7 +53,7 @@ Agent facts, rendered by `lab agent add|home`:
 - `{{SCRATCHPAD_NOTE}}` — its session-log note
 
 A new `{{KEY}}` is a new fact: compute it in `lib/lab.sh`, pass it through
-`agent_vars` or the `init` `VARS` array, and add it to this list. A key
+`agent_vars` or the `install` `VARS` array, and add it to this list. A key
 that can't be computed is a design smell — the tool decides, not the
 owner.
 

@@ -7,7 +7,7 @@
 The rules, the roster, the queue and the checks — in place before the first agent wakes.
 
 ![shape: mise + BATS](https://img.shields.io/badge/shape-mise%20%2B%20BATS-4EAA25?style=flat&logo=gnubash&logoColor=white)
-[![tests: 103](https://img.shields.io/badge/tests-103-brightgreen?style=flat)](test/)
+[![tests: 98](https://img.shields.io/badge/tests-98-brightgreen?style=flat)](test/)
 ![lints: @all](https://img.shields.io/badge/lints-%40all-blue?style=flat)
 ![README: TSX](https://img.shields.io/badge/README-TSX-f472b6?style=flat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat)](LICENSE)
@@ -20,7 +20,7 @@ The rules, the roster, the queue and the checks — in place before the first ag
 
 For anyone who runs a roster of agents against a repository — under any agent harness, or none — and wants the rules, the roster, the queue and the checks in place before the first agent wakes. It runs on git, bash and `mise`, and it is a rewrite of [lab_old](https://github.com/olavostauros/lab_old) on the [KnickKnackLabs skeleton](https://github.com/KnickKnackLabs/trahmpolina): mise-managed tasks, parallel BATS tests, codebase convention lints, a generated README, and CI on ubuntu-latest + macos-latest.
 
-A **lab** is a directory where a roster of agents wake, read their rules, take work from a queue, and return. `lab init` gives you one, complete: a contract that says what an agent may do without asking and what only you decide, a roster, a work queue, a lab style, a commit guard that refuses an author who is not on the roster, a steward that keeps the record true, and a set of checks. `lab agent add` puts an agent on it, and `lab doctor` measures the lab against the shape every lab shares. The command is `lab`.
+A **lab** is a directory where a roster of agents wake, read their rules, take work from a queue, and return. `lab install` gives you one, complete: a contract that says what an agent may do without asking and what only you decide, a roster, a work queue, a lab style, a commit guard that refuses an author who is not on the roster, a steward that keeps the record true, and a set of checks. `lab agent add` puts an agent on it, and `lab doctor` measures the lab against the shape every lab shares. The command is `lab`.
 
 lab is [MIT-licensed](LICENSE). A lab it writes belongs to whoever generated it and is not bound by the framework's license.
 
@@ -33,7 +33,7 @@ The framework asserts, and a fresh lab is complete. There is no menu of styles, 
 To run `lab`:
 
 - bash 4 or newer, first on `PATH`
-- [git](https://git-scm.com) 2.28 or newer, with `user.name` and `user.email` set: `lab init` makes a bootstrap commit
+- [git](https://git-scm.com) 2.28 or newer, with `user.name` and `user.email` set: `lab install` makes a bootstrap commit
 - curl, jq, CA certificates for HTTPS, and `sha256sum` or `shasum`: shiv's installer refuses without curl, git and jq; mise's installer checks its download with a sha tool; the `lab` shim resolves `lab agent add` to `agent:add` through jq
 - [shiv](https://github.com/KnickKnackLabs/shiv), which installs [mise](https://mise.jdx.dev) if it is absent; mise runs every `lab` command, and `mise install` in the clone brings the tools `mise.toml` pins
 
@@ -62,10 +62,10 @@ git clone https://github.com/olavostauros/lab
 cd lab && mise trust && mise install
 ```
 
-`mise trust` is asked once, because `mise.toml` sets tool and task settings for this directory. Every `lab` command in this README is a `mise run` task of this checkout (`lab init` is `mise run init`, `lab agent add` is `mise run agent:add`, `lab version` is `mise run version`), which is how CI runs it:
+`mise trust` is asked once, because `mise.toml` sets tool and task settings for this directory. Every `lab` command in this README is a `mise run` task of this checkout (`lab install` is `mise run install`, `lab agent add` is `mise run agent:add`, `lab version` is `mise run version`), which is how CI runs it:
 
 ```bash
-mise run init example --at /path/to/example
+mise run install example --at /path/to/example
 ```
 
 To put a working clone on `PATH` as `lab` — the way to try the shim against a branch — register the checkout itself as a local-path package:
@@ -76,14 +76,11 @@ shiv install lab "$PWD"
 
 ## Quick start
 
-Run `lab init` with no name and it asks for each fact it needs — where the lab lives, its name, its owner — scaffolds, then offers the roster, the hooks and a first check. Given a name it asks nothing: the flags are the same facts, and CI never sees a prompt.
+Run `lab install` with no name and it asks for each fact it needs — where the lab lives, its name, its owner — scaffolds, then offers the roster, the hooks and a first check. Given a name it asks nothing: the flags are the same facts, and CI never sees a prompt.
 
 ```bash
-# A lab inside the project it works on — AGENTS.md + .agents/ at the repo root
-cd ~/project && lab init example --embedded
-
-# A lab that is a repo of its own and works on other repos
-lab init example --at ~/example --owner 'Your Name'
+# A lab — a new directory that is a repo of its own
+lab install example --at ~/example --owner 'Your Name'
 
 cd ~/project
 lab agent add builder --role implementation --owns src/   --charge 'Builds what the queue asks for, under src/.'
@@ -94,13 +91,13 @@ mise run welcome
 lab doctor            # healthy
 ```
 
-`--owner` defaults to `git config user.name`, and `init` fails when neither names anyone: the owner's name is the one fact only the owner can supply.
+`--owner` defaults to `git config user.name`, and `install` fails when neither names anyone: the owner's name is the one fact only the owner can supply.
 
-`--embedded` with no `--at` puts the lab at the project repo's root — `AGENTS.md` beside the project's own files and `.agents/` holding the roster, notes, guard and tasks. An existing `AGENTS.md`, `mise.toml` or `.gitignore` is kept, never overwritten: `init` prints what to merge (the markers, the env block, the `.agents/secrets/` ignore) and `lab doctor` fails until it is in. The lab's name is `LAB_NAME` in its `mise.toml`, never the directory's; `--at` still takes any path inside the repo.
+Install makes a new directory and a repo of its own: `--at` must not exist yet, and an existing directory is refused rather than scaffolded into. The lab's name is `LAB_NAME` in its `mise.toml`, never the directory's.
 
 Where the shape came from is history, kept in git and nowhere in the tree: the bootstrap commit names the labs it was distilled from, and `lib/lineage-names` lists them only so `doctor` can reject them in a lab.
 
-## What init writes
+## What install writes
 
 | Path                                                   | What it is                                                                                                                                                                                                                                    |
 | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -117,19 +114,19 @@ Where the shape came from is history, kept in git and nowhere in the tree: the b
 | `notes/ at the work root`                              | the product's written memory — docs under notes/docs/, numbered decisions under notes/decisions/, learned facts flat; shared and append-only, and never .agents/notes/, which stays the lab's                                                 |
 | `mise.toml, README.md, .gitignore`                     | the rest; the README carries the one line of attribution a lab keeps, Started from lab on <date>, at <version> — the version lab version printed when the lab was made, which lab doctor reads back against the version checking it           |
 
-A standalone lab gets its own repo and a bootstrap commit, which is where the framework's name goes. An embedded lab is a directory of the project repo; you commit it as the owner, and `notes/` lands at that repo's root rather than inside the lab.
+Every lab is a repo of its own with a bootstrap commit, which is where the framework's name goes.
 
 ## What is yours
 
-The facts: the lab's name and path, the project and the owner, given to `init`. The roster, and each agent's role, directory and charge, given to `agent add`. The loosenings table, one dated row at a time, in your own turn. A granted account, as a row in that table and two files in `.agents/secrets/<name>/`: an age identity you mint and a `secrets` sops vault. A lighter attribution needs no account: set `LAB_GH_EMAIL` in the lab's `mise.toml` to an address GitHub attributes to you — your `users.noreply.github.com` address works — and `agent-env` stamps it, so every commit still names its agent and links to your account. Everything under `.agents/notes/`, including the lab style and each agent's Stance, which the framework writes and you may change. The contract itself is Tier 2 for every agent and yours alone to edit.
+The facts: the lab's name and path, the project and the owner, given to `install`. The roster, and each agent's role, directory and charge, given to `agent add`. The loosenings table, one dated row at a time, in your own turn. A granted account, as a row in that table and two files in `.agents/secrets/<name>/`: an age identity you mint and a `secrets` sops vault. A lighter attribution needs no account: set `LAB_GH_EMAIL` in the lab's `mise.toml` to an address GitHub attributes to you — your `users.noreply.github.com` address works — and `agent-env` stamps it, so every commit still names its agent and links to your account. Everything under `.agents/notes/`, including the lab style and each agent's Stance, which the framework writes and you may change. The contract itself is Tier 2 for every agent and yours alone to edit.
 
 What is not yours is the shape: the tiers, the two-key rule, the markers, the guard, one steward. `lab doctor` checks that shape, and it also fails on a leftover `{{KEY}}` or on the name of a lab the framework grew out of (the list is `lib/lineage-names`; `KnickKnackLabs` outside the tool pin is added), because those are the framework's leftovers and never your text. The lab's own name and project are never counted, so a lab that happens to share a name with one of those passes. Where an identity file sits under an agent's workspace, `doctor` also checks what `secrets` will check before an activation can fail on it — the directory and both files owner-only, one age key, a recipient line — proves the identity opens the vault with one `secrets list`, and fails any such file under the steward's workspace. Without the file it says nothing.
 
-If your git config signs commits, `init` says so and names the key before the passphrase prompt can appear, and `--no-commit` avoids it. Every lab's `mise run welcome` reports the same state, and the lab README's **Signing** section says what a signing machine means for the agents: their commits carry the owner's key, and a stalled prompt is reported, never worked around.
+If your git config signs commits, `install` says so and names the key before the passphrase prompt can appear, and `--no-commit` avoids it. Every lab's `mise run welcome` reports the same state, and the lab README's **Signing** section says what a signing machine means for the agents: their commits carry the owner's key, and a stalled prompt is reported, never worked around.
 
 ## The steward
 
-Every lab has exactly one, and it is always named `steward`. `init` adds it; a second one, or one under another name, is refused by `agent add` and failed by `doctor`. Its work is standing and needs no filing: it measures the queue, the backlog, the notes, the roster and the branches against what is on disk, fixes verified-false facts in `.agents/notes/` on a local branch, files everything else as a backlog proposal, and reports to the owner in the session.
+Every lab has exactly one, and it is always named `steward`. `install` adds it; a second one, or one under another name, is refused by `agent add` and failed by `doctor`. Its work is standing and needs no filing: it measures the queue, the backlog, the notes, the roster and the branches against what is on disk, fixes verified-false facts in `.agents/notes/` on a local branch, files everything else as a backlog proposal, and reports to the owner in the session.
 
 The steward is the lab speaking, so its identity is the lab's. Its home note is `.agents/notes/steward-home.md` — an encrypted note like every agent's — and a runner's definition for it, where one exists, is named after the lab.
 
@@ -162,23 +159,23 @@ These hold in every lab, and `lab doctor` checks the ones a script can:
 - **Nobody merges but the owner**, until a loosening says otherwise.
 - **The roster is one file**, and the guard fails closed without it.
 - **Homes are the agent's boundary**, not the lab's: `agent add` creates them once and never overwrites them.
-- **The lab is harness-agnostic.** `init`, `agent add` and `doctor` never read or write a runner's files.
+- **The lab is harness-agnostic.** `install`, `agent add` and `doctor` never read or write a runner's files.
 - **There is one steward, named steward, homed at .agents/notes/steward-home.md.** It has no outward identity, and no upgrade path gives it one.
-- **A fresh lab is complete.** The framework asserts; the owner supplies facts and grants widenings. `lab init x && lab doctor --lab x` exits 0, and no generated file names a lineage or a runner, or depends on a toolchain outside the `bats` pin.
+- **A fresh lab is complete.** The framework asserts; the owner supplies facts and grants widenings. `lab install x && lab doctor --lab x` exits 0, and no generated file names a lineage or a runner, or depends on a toolchain outside the `bats` pin.
 
 ## Tasks
 
-| Task                  | Description                                                                       |
-| --------------------- | --------------------------------------------------------------------------------- |
-| `mise run agent:add`  | Put an agent on a lab's roster: identity note and home notes                      |
-| `mise run agent:home` | Create the home notes of a rostered agent that lacks them                         |
-| `mise run doctor`     | Check a lab against the framework's invariants                                    |
-| `mise run init`       | Scaffold a lab: contract, roster, queue, style, guard, steward and tasks          |
-| `mise run test`       | Run BATS tests                                                                    |
-| `mise run validate`   | Run all validation checks with compact results and private full logs              |
-| `mise run version`    | Print the framework version: the tag at HEAD, else the short commit, else unknown |
+| Task                  | Description                                                                                                  |
+| --------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `mise run agent:add`  | Put an agent on a lab's roster: identity note and home notes                                                 |
+| `mise run agent:home` | Create the home notes of a rostered agent that lacks them                                                    |
+| `mise run doctor`     | Check a lab against the framework's invariants                                                               |
+| `mise run install`    | Install a lab: contract, roster, queue, style, guard, steward and tasks — a new directory, a repo of its own |
+| `mise run test`       | Run BATS tests                                                                                               |
+| `mise run validate`   | Run all validation checks with compact results and private full logs                                         |
+| `mise run version`    | Print the framework version: the tag at HEAD, else the short commit, else unknown                            |
 
-Every public task is also a shim command — `lab init`, `lab doctor`, `lab version`, `lab agent add`, `lab agent home`, `lab test`, `lab validate` — and nothing is hidden; the shim resolves `agent add` to `agent:add` through jq.
+Every public task is also a shim command — `lab install`, `lab doctor`, `lab version`, `lab agent add`, `lab agent home`, `lab test`, `lab validate` — and nothing is hidden; the shim resolves `agent add` to `agent:add` through jq.
 
 ## Development
 
@@ -232,7 +229,7 @@ Every invocation prints its private log directory and one timed result per check
 
 CI calls the same gate with `--verbose` so detailed failures survive in its masked job log. The explicit `ci_lint_gate` declaration tells Codebase that this tested aggregate owns lint; it is not automatic inspection of the task. Read the [adoption guide](CONTRIBUTING.md#reference-validation-workflow) for the report format, prerequisite example, concurrency ownership, process-group limits, and when shared writes require an exclusion boundary. The individual commands remain available for focused checks.
 
-The suite currently has **103 tests** and **7 public tasks**. Those numbers are read from the repo at README build time.
+The suite currently has **98 tests** and **7 public tasks**. Those numbers are read from the repo at README build time.
 
 <div align="center">
 

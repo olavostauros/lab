@@ -3,10 +3,10 @@
 load test_helper
 
 setup() {
-  require_lab_tasks init agent/add doctor
+  require_lab_tasks install agent/add doctor
   lab_setup
   H="$BATS_TEST_TMPDIR/hearth"
-  lab init hearth --at "$H" >/dev/null
+  lab install hearth --at "$H" >/dev/null
 }
 
 @test "doctor is healthy on a fresh lab, and warns only about the guard" {
@@ -79,7 +79,7 @@ setup() {
   assert_output_contains "fail: lineage: .agents/notes/work-queue.md:$(wc -l < "$H/.agents/notes/work-queue.md"):read KnickKnackLabs/notes"
 
   a="$BATS_TEST_TMPDIR/$first"
-  lab init "$first" --at "$a" --project "the ${first^}" >/dev/null
+  lab install "$first" --at "$a" --project "the ${first^}" >/dev/null
   run lab doctor --lab "$a"
   assert_success
 }
