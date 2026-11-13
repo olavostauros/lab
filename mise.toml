@@ -13,9 +13,6 @@ LAB_AUTHOR_DOMAIN = "lab.invalid"
 # The owner's GitHub email (the noreply address works): agent-env stamps it,
 # so commits link to that account under each agent's name; empty keeps the label.
 LAB_GH_EMAIL = ""
-# Owner commits are the default here: the agent-identity hook lets any commit
-# through in a mise-activated shell, whoever the author is.
-LAB_OWNER_COMMIT = "1"
 
 [task_config]
 includes = [".agents/tasks", ".mise/tasks"]

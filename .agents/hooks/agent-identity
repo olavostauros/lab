@@ -6,7 +6,8 @@
 #
 # LAB_OWNER_COMMIT=1 is the human's escape hatch, not an agent's.
 # An agent that sets it is disabling a guard to make a session pass, which
-# Tier 3 forbids outright.
+# Tier 3 forbids outright. `git config lab.ownerCommit true` is the same
+# grant scoped to this checkout — it lives in .git/config and never pushes.
 set -eo pipefail
 
 hook="$(readlink -f "${BASH_SOURCE[0]}")"
@@ -17,6 +18,10 @@ author="${GIT_AUTHOR_NAME:-$(git config user.name 2>/dev/null)}" || author=""
 
 owner_commit="LAB_OWNER_COMMIT"
 if [ "${!owner_commit:-}" = "1" ]; then
+  exit 0
+fi
+
+if [ "$(git config --bool lab.ownerCommit 2>/dev/null)" = "true" ]; then
   exit 0
 fi
 
@@ -35,5 +40,6 @@ echo "Activate first, in this same shell:" >&2
 echo "  eval \"\$(mise -C $lab run -q agent-env <name>)\"" >&2
 echo "" >&2
 echo "If you are the owner and meant to commit as yourself:" >&2
-echo "  LAB_OWNER_COMMIT=1 git commit ..." >&2
+echo "  LAB_OWNER_COMMIT=1 git commit ...                  # once" >&2
+echo "  git config lab.ownerCommit true                  # always, this checkout" >&2
 exit 1
