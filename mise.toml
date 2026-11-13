@@ -12,6 +12,7 @@ shiv = "https://github.com/KnickKnackLabs/vfox-shiv"
 "aqua:shenwei356/rush" = "0.9.0"
 gum = "0.17.0"
 "shiv:codebase" = "0.5"
+"shiv:notes" = "0.10"
 "shiv:readme" = "0.3"
 
 [_.codebase]
