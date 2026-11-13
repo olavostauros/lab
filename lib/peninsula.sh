@@ -140,6 +140,14 @@ notes_dir_rel() {
   printf '%s\n' "${rel:+$rel/}.agents/notes"
 }
 
+# In-place sed portable across GNU and BSD: -i's suffix is optional on one
+# and required on the other — give both a backup name, then remove it.
+sedi() {
+  local file
+  for file; do :; done
+  sed -i.bak "$@" && rm -f "$file.bak"
+}
+
 # notes' rendered hooks call "run_notes <task>" without --dir, which breaks
 # every hook for a non-default notes dir. Each rendered hook defines
 # NOTES_ROOT; pass it through. Idempotent: a file already carrying --dir
@@ -149,7 +157,7 @@ patch_notes_hooks() {
   for f in "$hooks_dir"/*.d/obfuscation "$hooks_dir"/*.d/deobfuscation; do
     [ -f "$f" ] || continue
     grep -q -- '--dir' "$f" && continue
-    sed -i -E "s/run_notes (obfuscate|deobfuscate)/run_notes \\1 --dir \"\$NOTES_ROOT\"/g" "$f"
+    sedi -E "s/run_notes (obfuscate|deobfuscate)/run_notes \\1 --dir \"\$NOTES_ROOT\"/g" "$f"
   done
 }
 

@@ -91,7 +91,7 @@ doctor_directly_with() {
   doctor_with PENINSULA_FRAMEWORK_VERSION=v5.0.0
   assert_success
   assert_output_contains "note: framework: made at $(peninsula version); this tool is v5.0.0"
-  sed -i '/^on [0-9-]*, at /d' "$H/README.md"
+  sedi '/^on [0-9-]*, at /d' "$H/README.md"
   doctor_with
   assert_success
   assert_output_contains "note: framework: the README records no framework version (this tool is $(peninsula version))"

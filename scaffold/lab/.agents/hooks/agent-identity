@@ -10,7 +10,15 @@
 # grant scoped to this checkout — it lives in .git/config and never pushes.
 set -eo pipefail
 
-hook="$(readlink -f "${BASH_SOURCE[0]}")"
+# BSD readlink has no -f: walk the link chain by hand to find the lab.
+hook="${BASH_SOURCE[0]}"
+while [ -L "$hook" ]; do
+  target="$(readlink "$hook")"
+  case "$target" in
+    /*) hook="$target" ;;
+    *)  hook="$(dirname "$hook")/$target" ;;
+  esac
+done
 lab="${LAB_DIR:-$(cd "$(dirname "$hook")/../.." && pwd)}"
 roster="$lab/.agents/roster.tsv"
 

@@ -222,7 +222,7 @@ report() {
   done
 }
 report placeholder <<< "$(hits -oE '\{\{[A-Z_]+\}\}')"
-lineage="$(lineage_names "$LAB" | paste -sd '|')"
+lineage="$(lineage_names "$LAB" | paste -sd '|' -)"
 report lineage <<< "$(hits -iwE "$lineage")"
 report lineage <<< "$(hits -iwE 'KnickKnackLabs|Knick Knack Labs' --exclude=mise.toml)"
 if [ "$leftovers" -eq 0 ]; then

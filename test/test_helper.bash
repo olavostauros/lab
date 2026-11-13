@@ -52,6 +52,15 @@ peninsula_task_ported() {
 }
 export -f peninsula_task_ported
 
+# In-place sed portable across GNU and BSD: -i's suffix is optional on one
+# and required on the other — give both a backup name, then remove it.
+sedi() {
+  local file
+  for file; do :; done
+  sed -i.bak "$@" && rm -f "$file.bak"
+}
+export -f sedi
+
 require_peninsula_tasks() {
   local task
   for task in "$@"; do
@@ -87,6 +96,9 @@ EOF
 }
 
 peninsula_setup() {
+  # The tool prints canonical paths; on macOS /var is a symlink to
+  # /private/var, so the tests' base must be canonical too.
+  BATS_TEST_TMPDIR="$(cd "$BATS_TEST_TMPDIR" && pwd -P)"
   export CALLER="$BATS_TEST_TMPDIR/caller"
   export DEFINITIONS_DIR="$BATS_TEST_TMPDIR/definitions"
   export MISE_TRUSTED_CONFIG_PATHS="$BATS_TEST_TMPDIR"

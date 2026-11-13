@@ -19,7 +19,7 @@ setup() {
   run peninsula agent add steward --lab "$H" --owns tidy/
   assert_failure
   assert_output_contains "the steward owns no directory"
-  sed -i '/^steward\t/d' "$H/.agents/roster.tsv"
+  sedi '/^steward[[:space:]]/d' "$H/.agents/roster.tsv"
   printf 'hestia\tstewardship\t\tsteward\n' >> "$H/.agents/roster.tsv"
   run peninsula agent add steward --lab "$H"
   assert_failure
@@ -50,7 +50,7 @@ setup() {
   assert_file_contains "$H/.agents/notes/vulcan-home.md" "$H/.agents/notes/vulcan-home.md"
   [ -z "$(ls -A "$DEFINITIONS_DIR")" ]
   ! grep -rq '{{' "$H/.agents/notes/vulcan.md" "$H/.agents/notes/vulcan-home.md"
-  ! grep -rqiwE "$(awk '$1 == "runner" { print $2 }' "$REPO_DIR/lib/lineage-names" | paste -sd '|')" "$H"
+  ! grep -rqiwE "$(awk '$1 == "runner" { print $2 }' "$REPO_DIR/lib/lineage-names" | paste -sd '|' -)" "$H"
   ! grep -rq 'lab:decide' "$H/.agents/notes/vulcan.md" "$H/.agents/notes/vulcan-home.md"
 }
 

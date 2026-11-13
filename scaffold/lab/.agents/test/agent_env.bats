@@ -22,7 +22,7 @@ teardown() {
   name="$(awk -F '\t' '!/^#/ && NF && $1 != "steward" { print $1; exit }' "$ROSTER")"
   [ -n "$name" ] || name="$(awk -F '\t' '!/^#/ && NF { print $1; exit }' "$ROSTER")"
   cp mise.toml "$BATS_TEST_TMPDIR/mise.toml.orig"
-  sed -i 's/^LAB_GH_EMAIL = .*/LAB_GH_EMAIL = "12345+owner@users.noreply.github.com"/' mise.toml
+  sed -i.bak 's/^LAB_GH_EMAIL = .*/LAB_GH_EMAIL = "12345+owner@users.noreply.github.com"/' mise.toml && rm -f mise.toml.bak
   run mise run -q agent-env "$name"
   cp -f "$BATS_TEST_TMPDIR/mise.toml.orig" mise.toml
   [ "$status" -eq 0 ]

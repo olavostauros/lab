@@ -3,7 +3,7 @@
 load test_helper
 
 listed_names() {
-  awk -v kind="${1:-}" 'kind == "" || $1 == kind { print $2 }' "$REPO_DIR/lib/lineage-names" | paste -sd '|'
+  awk -v kind="${1:-}" 'kind == "" || $1 == kind { print $2 }' "$REPO_DIR/lib/lineage-names" | paste -sd '|' -
 }
 
 LAB_KEYS="LAB_NAME LAB_UPPER LAB_PATH WORK_PATH PROJECT CREATED FRAMEWORK_VERSION OWNER AUTHOR_DOMAIN"

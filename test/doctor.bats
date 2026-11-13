@@ -48,7 +48,7 @@ setup() {
 
 @test "doctor warns when .agents/secrets is not git-ignored" {
   mkdir "$H/.agents/secrets"
-  sed -i '/^\.agents\/secrets\/$/d' "$H/.gitignore"
+  sedi '/^\.agents\/secrets\/$/d' "$H/.gitignore"
   run peninsula doctor --lab "$H"
   assert_success
   assert_output_contains "warn: .agents/secrets/ is not git-ignored"
@@ -121,15 +121,15 @@ setup() {
 
 @test "doctor fails when an agent is on the roster but not in the contract" {
   peninsula agent add vulcan --lab "$H" --role backend --owns server/ >/dev/null
-  sed -i '/^- \*\*vulcan\*\* — /d' "$H/AGENTS.md"
+  sedi '/^- \*\*vulcan\*\* — /d' "$H/AGENTS.md"
   run peninsula doctor --lab "$H"
   assert_failure
   assert_output_contains "fail: vulcan: not listed"
 }
 
 @test "doctor fails when a marker or an authority section is gone" {
-  sed -i '/^<!-- lab:read-first -->$/d' "$H/AGENTS.md"
-  sed -i 's/^#### The two-key rule$/#### Two keys/' "$H/AGENTS.md"
+  sedi '/^<!-- lab:read-first -->$/d' "$H/AGENTS.md"
+  sedi 's/^#### The two-key rule$/#### Two keys/' "$H/AGENTS.md"
   run peninsula doctor --lab "$H"
   assert_failure
   assert_output_contains "lacks marker <!-- lab:read-first -->"

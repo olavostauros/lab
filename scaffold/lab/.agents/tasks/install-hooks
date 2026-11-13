@@ -21,6 +21,6 @@ echo "installed: $target -> $LAB_DIR/.agents/hooks/agent-identity"
 for f in "$hooks_dir"/*.d/obfuscation "$hooks_dir"/*.d/deobfuscation; do
   [ -f "$f" ] || continue
   grep -q -- '--dir' "$f" && continue
-  sed -i -E "s/run_notes (obfuscate|deobfuscate)/run_notes \\1 --dir \"\$NOTES_ROOT\"/g" "$f"
+  sed -i.bak -E "s/run_notes (obfuscate|deobfuscate)/run_notes \\1 --dir \"\$NOTES_ROOT\"/g" "$f" && rm -f "$f.bak"
   echo "patched: $f (notes tasks need --dir)"
 done
