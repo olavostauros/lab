@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+#MISE description="Print the framework version: the tag at HEAD, else the short commit, else unknown"
+#USAGE example "lab version" header="Print the version this checkout is at"
+set -euo pipefail
+
+source "$MISE_CONFIG_ROOT/lib/lab.sh"
+
+framework_version
