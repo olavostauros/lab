@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+#MISE description="Install the lab's hooks in the work tree"
+set -eo pipefail
+
+hooks_dir="$(git -C "$WORK_DIR" rev-parse --git-path hooks)"
+case "$hooks_dir" in /*) ;; *) hooks_dir="$WORK_DIR/$hooks_dir" ;; esac
+mkdir -p "$hooks_dir"
+
+# notes' dispatcher owns <hook> and runs every executable in <hook>.d; the
+# guard hangs off pre-commit.d where one exists, pre-commit itself otherwise.
+if [ -d "$hooks_dir/pre-commit.d" ]; then
+  target="$hooks_dir/pre-commit.d/agent-identity"
+else
+  target="$hooks_dir/pre-commit"
+fi
+ln -sf "$LAB_DIR/.agents/hooks/agent-identity" "$target"
+echo "installed: $target -> $LAB_DIR/.agents/hooks/agent-identity"
+
+# notes' rendered hooks call "run_notes <task>" without --dir, which breaks
+# them for a non-default notes dir; NOTES_ROOT in each hook is the fix.
+for f in "$hooks_dir"/*.d/obfuscation "$hooks_dir"/*.d/deobfuscation; do
+  [ -f "$f" ] || continue
+  grep -q -- '--dir' "$f" && continue
+  sed -i -E "s/run_notes (obfuscate|deobfuscate)/run_notes \\1 --dir \"\$NOTES_ROOT\"/g" "$f"
+  echo "patched: $f (notes tasks need --dir)"
+done

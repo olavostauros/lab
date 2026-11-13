@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+#MISE description="Print the exports that activate a lab agent's identity; eval the output"
+#USAGE arg "<name>" help="Agent name, as on .agents/roster.tsv"
+set -eo pipefail
+
+name="${usage_name:?agent name required}"
+roster="$LAB_DIR/.agents/roster.tsv"
+
+if ! awk -F '\t' -v n="$name" '!/^#/ && $1 == n { found = 1 } END { exit !found }' "$roster"; then
+  echo "unknown agent: $name (see $roster)" >&2
+  exit 1
+fi
+
+email="${LAB_GH_EMAIL:-$name@$LAB_AUTHOR_DOMAIN}"
+
+printf 'export GIT_AUTHOR_NAME=%q\n' "$name"
+printf 'export GIT_AUTHOR_EMAIL=%q\n' "$email"
+printf 'export GIT_COMMITTER_NAME=%q\n' "$name"
+printf 'export GIT_COMMITTER_EMAIL=%q\n' "$email"
+
+[ "$name" != steward ] || exit 0
+secrets_dir="$LAB_DIR/.agents/home/$name/.secrets"
+identity="$secrets_dir/identity.txt"
+[ -f "$identity" ] || exit 0
+recipient="$(awk '/^# public key: / { print $4; exit }' "$identity")"
+if [ -z "$recipient" ]; then
+  echo "$identity has no '# public key:' line; the owner mints identities with age-keygen, which writes one" >&2
+  exit 1
+fi
+printf 'export SECRETS_PROVIDER=sops\n'
+printf 'export SECRETS_SOPS_FILE=%q\n' "$secrets_dir/vault.enc.yaml"
+printf 'export SECRETS_SOPS_AGE_KEY_FILE=%q\n' "$identity"
+printf 'export SECRETS_SOPS_RECIPIENT=%q\n' "$recipient"

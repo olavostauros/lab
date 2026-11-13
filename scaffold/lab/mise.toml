@@ -1,0 +1,28 @@
+[env]
+LAB_NAME = "{{LAB_NAME}}"
+LAB_PROJECT = "{{PROJECT}}"
+LAB_DIR = "{{ config_root }}"
+WORK_DIR = "{{WORK_DIR_EXPR}}"
+LAB_AUTHOR_DOMAIN = "{{AUTHOR_DOMAIN}}"
+# The owner's GitHub email (the noreply address works): agent-env stamps it,
+# so commits link to that account under each agent's name; empty keeps the label.
+LAB_GH_EMAIL = ""
+
+[settings]
+experimental = true
+quiet = true
+task_output = "interleave"
+
+[task_config]
+includes = [".agents/tasks"]
+
+[plugins]
+shiv = "https://github.com/KnickKnackLabs/vfox-shiv"
+
+[tools]
+"aqua:KnickKnackLabs/bats-core" = "1.14.0-kkl.3"
+"shiv:notes" = "0.10.3"
+"shiv:rudi" = "0.5.4"
+
+[settings.aqua]
+registries = ["https://github.com/KnickKnackLabs/bats-core"]

@@ -12,7 +12,8 @@ load test_helper
     .mise/tasks/validate \
     .mise/tasks/doctor \
     .github/workflows/test.yml \
-    lib/.gitkeep
+    lib/lab.sh \
+    lib/lineage-names
   do
     [ -e "$REPO_DIR/$path" ]
   done
