@@ -7,7 +7,7 @@
 The rules, the roster, the queue and the checks — in place before the first agent wakes.
 
 ![shape: mise + BATS](https://img.shields.io/badge/shape-mise%20%2B%20BATS-4EAA25?style=flat&logo=gnubash&logoColor=white)
-[![tests: 63](https://img.shields.io/badge/tests-63-brightgreen?style=flat)](test/)
+[![tests: 75](https://img.shields.io/badge/tests-75-brightgreen?style=flat)](test/)
 ![lints: @all](https://img.shields.io/badge/lints-%40all-blue?style=flat)
 ![README: TSX](https://img.shields.io/badge/README-TSX-f472b6?style=flat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat)](LICENSE)
@@ -66,12 +66,14 @@ codebase pre-commit
 
 ## Tasks
 
-| Task                | Description                                                              |
-| ------------------- | ------------------------------------------------------------------------ |
-| `mise run doctor`   | Check local development setup                                            |
-| `mise run init`     | Scaffold a lab: contract, roster, queue, style, guard, steward and tasks |
-| `mise run test`     | Run BATS tests                                                           |
-| `mise run validate` | Run all validation checks with compact results and private full logs     |
+| Task                  | Description                                                              |
+| --------------------- | ------------------------------------------------------------------------ |
+| `mise run agent:add`  | Put an agent on a lab's roster: identity note and home repo              |
+| `mise run agent:home` | Create the private home of a rostered agent that lacks one               |
+| `mise run doctor`     | Check local development setup                                            |
+| `mise run init`       | Scaffold a lab: contract, roster, queue, style, guard, steward and tasks |
+| `mise run test`       | Run BATS tests                                                           |
+| `mise run validate`   | Run all validation checks with compact results and private full logs     |
 
 ## Parallel tests
 
@@ -120,7 +122,7 @@ Every invocation prints its private log directory and one timed result per check
 
 CI calls the same gate with `--verbose` so detailed failures survive in its masked job log. The explicit `ci_lint_gate` declaration tells Codebase that this tested aggregate owns lint; it is not automatic inspection of the task. Read the [adoption guide](CONTRIBUTING.md#reference-validation-workflow) for the report format, prerequisite example, concurrency ownership, process-group limits, and when shared writes require an exclusion boundary. The individual commands remain available for focused checks.
 
-The starter suite currently has **63 tests** and **4 public tasks**. Those numbers are read from the repo at README build time.
+The starter suite currently has **75 tests** and **6 public tasks**. Those numbers are read from the repo at README build time.
 
 <div align="center">
 

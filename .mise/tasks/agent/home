@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+#MISE description="Create the private home of a rostered agent that lacks one"
+#USAGE arg "<name>" help="Agent name, as on .agents/roster.tsv"
+#USAGE flag "--lab <path>" help="The lab directory; defaults to the current directory"
+#USAGE example "lab agent home vulcan --lab ~/example" header="Create vulcan's home under the lab's .agents/home/"
+set -euo pipefail
+
+source "$MISE_CONFIG_ROOT/lib/lab.sh"
+
+NAME="${usage_name:?an agent name is required}"
+LAB="$(lab_root "${usage_lab:-.}")"
+roster_has "$LAB" "$NAME" || die "$NAME is not on the roster of $(display_path "$LAB")"
+
+KIND="$(roster_kind "$LAB" "$NAME")"
+OWNS="$(roster_field "$LAB" "$NAME" 3)"
+ROLE="$(roster_field "$LAB" "$NAME" 2)"
+vars_text="$(agent_vars "$LAB" "$NAME" "$ROLE" "$OWNS" "$(default_charge "$KIND" "$OWNS")" "$KIND")"
+mapfile -t vars <<< "$vars_text"
+ensure_home "$LAB" "$NAME" "${vars[@]+"${vars[@]}"}"
