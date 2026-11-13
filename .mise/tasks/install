@@ -5,19 +5,19 @@
 #USAGE flag "--project <project>" help="What the lab works on; defaults to the lab name"
 #USAGE flag "--owner <owner>" help="The owner's name as it appears in the contract; defaults to git user.name, and is required when that is unset"
 #USAGE flag "--no-commit" help="Leave the generated files uncommitted"
-#USAGE example "lab install" header="Ask for each fact, then scaffold a lab and offer agents, hooks and a first check"
-#USAGE example "lab install example --at ~/example --owner 'Your Name'" header="A lab that works on other repos"
+#USAGE example "peninsula install" header="Ask for each fact, then scaffold a lab and offer agents, hooks and a first check"
+#USAGE example "peninsula install example --at ~/example --owner 'Your Name'" header="A lab that works on other repos"
 set -euo pipefail
 
-source "$MISE_CONFIG_ROOT/lib/lab.sh"
+source "$MISE_CONFIG_ROOT/lib/peninsula.sh"
 
 NAME="${usage_name:-}"
 
 if [ -z "$NAME" ]; then
   # Guided: every flag is still an answer; what is missing is asked of the
-  # owner, on $LAB_PROMPT_TTY, else /dev/tty, else stdin.
+  # owner, on $PENINSULA_PROMPT_TTY, else /dev/tty, else stdin.
   if lab="$(lab_root_up "$(caller_pwd)")"; then
-    say "$(display_path "$lab") is already the $(lab_name "$lab") lab — 'lab doctor --lab $(display_path "$lab")' checks it"
+    say "$(display_path "$lab") is already the $(lab_name "$lab") lab — 'peninsula doctor --lab $(display_path "$lab")' checks it"
     exit 0
   fi
 
@@ -51,7 +51,7 @@ if [ -z "$NAME" ]; then
   say "  a repo of its own, working on $PROJECT"
   say "  owner: $OWNER"
   say ""
-  if ! lab_yes && ! ask_confirm "Create it?"; then
+  if ! peninsula_yes && ! ask_confirm "Create it?"; then
     say "nothing written"
     exit 1
   fi
@@ -88,13 +88,13 @@ if [ -z "$NAME" ]; then
   done
 
   say ""
-  if lab_yes || ask_confirm "Install the lab's hooks (agent-identity + notes)?"; then
+  if peninsula_yes || ask_confirm "Install the lab's hooks (agent-identity + notes)?"; then
     mise -C "$lab_at" run -q install-hooks
   fi
-  if lab_yes || ask_confirm "Print the welcome note?"; then
+  if peninsula_yes || ask_confirm "Print the welcome note?"; then
     mise -C "$lab_at" run -q welcome
   fi
-  if lab_yes || ask_confirm "Check it with lab doctor?"; then
+  if peninsula_yes || ask_confirm "Check it with peninsula doctor?"; then
     mise -C "$MISE_CONFIG_ROOT" run -q doctor --lab "$lab_at"
   fi
 
@@ -134,8 +134,8 @@ VARS=(
 git -C "$TARGET" init -q -b main
 say "init: git repo at $(display_path "$TARGET")"
 
-install_tree "$LAB_SCAFFOLD/lab" "$TARGET" "${VARS[@]+"${VARS[@]}"}"
-install_tree "$LAB_SCAFFOLD/work" "$WORK" "${VARS[@]+"${VARS[@]}"}"
+install_tree "$PENINSULA_SCAFFOLD/lab" "$TARGET" "${VARS[@]+"${VARS[@]}"}"
+install_tree "$PENINSULA_SCAFFOLD/work" "$WORK" "${VARS[@]+"${VARS[@]}"}"
 
 mise trust "$TARGET/mise.toml" >/dev/null
 
@@ -176,11 +176,11 @@ else
     say "sign: the bootstrap commit is signed ($signing); a passphrase prompt that appears now is for it. --no-commit leaves the files for the owner to commit instead"
   fi
   git -C "$TARGET" add .
-  env "${UPPER}_OWNER_COMMIT=1" git -C "$TARGET" commit -q -m "$NAME: bootstrap the lab from lab"
+  env "${UPPER}_OWNER_COMMIT=1" git -C "$TARGET" commit -q -m "$NAME: bootstrap the lab from peninsula"
   say "commit: bootstrap the lab"
 fi
 
 say ""
 say "done: $NAME at $(display_path "$TARGET")"
-say "next: lab agent add <name> --lab $(display_path "$TARGET") --role '<role>' [--owns <dir>/]"
+say "next: peninsula agent add <name> --lab $(display_path "$TARGET") --role '<role>' [--owns <dir>/]"
 say "next: cd $(display_path "$TARGET") && mise run install-hooks && mise run welcome"

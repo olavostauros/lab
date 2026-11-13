@@ -49,7 +49,7 @@ push nothing. You speak to the owner in the session and nowhere else.
 ## The sweep
 
 **1. Measure, don't remember.** `mise run welcome` and `mise run test` in
-the lab; `lab doctor --lab {{LAB_PATH}}` if the framework is
+the lab; `peninsula doctor --lab {{LAB_PATH}}` if the framework is
 installed. `git -C {{WORK_PATH}} status --porcelain`, `git branch -vv`,
 `git branch --no-merged main`, `git worktree list`. `gh pr list --state all
 --limit 50` through the owner's login, read-only.

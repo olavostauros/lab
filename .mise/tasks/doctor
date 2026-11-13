@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #MISE description="Check a lab against the framework's invariants"
 #USAGE flag "--lab <path>" help="The lab directory; defaults to the current directory"
-#USAGE example "cd ~/example && lab doctor" header="Check the lab in the current directory"
-#USAGE example "lab doctor --lab ~/example" header="Check a lab from anywhere"
+#USAGE example "cd ~/example && peninsula doctor" header="Check the lab in the current directory"
+#USAGE example "peninsula doctor --lab ~/example" header="Check a lab from anywhere"
 set -euo pipefail
 
-source "$MISE_CONFIG_ROOT/lib/lab.sh"
+source "$MISE_CONFIG_ROOT/lib/peninsula.sh"
 
 LAB="$(lab_root "${usage_lab:-.}")"
 WORK="$(lab_work_dir "$LAB")"
@@ -21,15 +21,15 @@ say "work:  $(display_path "$WORK")"
 say ""
 
 version="$(bash_version)"
-if version_at_least "$version" 4; then ok "bash $version"; else fail "bash $version: lab needs bash 4 or newer first on PATH"; fi
+if version_at_least "$version" 4; then ok "bash $version"; else fail "bash $version: peninsula needs bash 4 or newer first on PATH"; fi
 version="$(git_version)"
-if version_at_least "$version" 2.28; then ok "git $version"; else fail "git $version: lab install needs git 2.28 or newer for git init -b"; fi
+if version_at_least "$version" 2.28; then ok "git $version"; else fail "git $version: peninsula install needs git 2.28 or newer for git init -b"; fi
 for key in name email; do
-  if git_identity "$WORK" "$key"; then ok "git user.$key"; else fail "git user.$key is unset, so lab install cannot commit → git config --global user.$key '…'"; fi
+  if git_identity "$WORK" "$key"; then ok "git user.$key"; else fail "git user.$key is unset, so peninsula install cannot commit → git config --global user.$key '…'"; fi
 done
-if command -v mise >/dev/null 2>&1; then ok "mise on PATH"; else fail "mise is not on PATH, and every lab command runs through it → put the directory holding mise on PATH"; fi
-if [ -n "${LAB_CALLER_PWD:-}" ]; then
-  if command -v jq >/dev/null 2>&1; then ok "jq on PATH"; else warn "jq is not on PATH: without it the lab shim runs 'lab agent add' as 'mise run agent add' → install jq"; fi
+if command -v mise >/dev/null 2>&1; then ok "mise on PATH"; else fail "mise is not on PATH, and every peninsula command runs through it → put the directory holding mise on PATH"; fi
+if [ -n "${PENINSULA_CALLER_PWD:-}" ]; then
+  if command -v jq >/dev/null 2>&1; then ok "jq on PATH"; else warn "jq is not on PATH: without it the peninsula shim runs 'peninsula agent add' as 'mise run agent add' → install jq"; fi
 fi
 if on_path "$HOME/.local/bin"; then ok "$(display_path "$HOME/.local/bin") on PATH"; else warn "$(display_path "$HOME/.local/bin") is not on PATH, and shiv and mise install there → export PATH=\"\$HOME/.local/bin:\$PATH\""; fi
 recorded="$(lab_framework_version "$LAB")"
@@ -54,7 +54,7 @@ drift_tmp="$(mktemp -d)"
 for f in .agents/hooks/agent-identity .agents/tasks/welcome .agents/tasks/test .agents/tasks/agent-env .agents/tasks/install-hooks \
          .agents/test/agent_env.bats .agents/test/agent_identity.bats .agents/test/roster.bats; do
   [ -f "$LAB/$f" ] || continue
-  render "$LAB_SCAFFOLD/lab/$f" "$drift_tmp/$f" \
+  render "$PENINSULA_SCAFFOLD/lab/$f" "$drift_tmp/$f" \
     "LAB_NAME=$(lab_name "$LAB")" "LAB_UPPER=$(upper_env "$(lab_name "$LAB")")"
   cmp -s "$LAB/$f" "$drift_tmp/$f" || note "$f differs from the scaffold's render — an owner edit or an older framework"
 done
@@ -180,7 +180,7 @@ while IFS= read -r agent; do
   fi
   if [ -f "$LAB/.agents/notes/$agent.md" ]; then ok "$agent: .agents/notes/$agent.md"; else fail "$agent: .agents/notes/$agent.md missing"; fi
   if grep -q "^- \*\*$agent\*\* — " "$LAB/AGENTS.md"; then ok "$agent: on the roster in AGENTS.md"; else fail "$agent: not listed under 'Who lives here' in AGENTS.md"; fi
-  if [ -f "$home_note" ]; then ok "$agent: home note .agents/notes/$agent-home.md"; else warn "$agent: no home note at .agents/notes/$agent-home.md → lab agent home $agent"; fi
+  if [ -f "$home_note" ]; then ok "$agent: home note .agents/notes/$agent-home.md"; else warn "$agent: no home note at .agents/notes/$agent-home.md → peninsula agent home $agent"; fi
   secrets_dir="$(agent_secrets_dir "$LAB" "$agent")"
   if [ -f "$secrets_dir/identity.txt" ]; then
     if [ "$kind" = steward ]; then
@@ -190,9 +190,9 @@ while IFS= read -r agent; do
     fi
   fi
 done <<< "$agents_text"
-[ "$count" -gt 0 ] || warn "roster is empty → lab agent add <name> --role <role>"
+[ "$count" -gt 0 ] || warn "roster is empty → peninsula agent add <name> --role <role>"
 [ "$keepers" -le 1 ] || fail "roster lists $keepers stewards; a lab has exactly one"
-[ "$keepers" -eq 1 ] || warn "no steward → lab agent add $STEWARD"
+[ "$keepers" -eq 1 ] || warn "no steward → peninsula agent add $STEWARD"
 
 if [ -d "$LAB/.agents/secrets" ]; then
   case "$LAB" in

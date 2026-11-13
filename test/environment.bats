@@ -3,14 +3,14 @@
 load test_helper
 
 setup() {
-  require_lab_tasks install doctor
-  lab_setup
-  # lab_setup fakes user.name through GIT_CONFIG_COUNT so install can commit;
+  require_peninsula_tasks install doctor
+  peninsula_setup
+  # peninsula_setup fakes user.name through GIT_CONFIG_COUNT so install can commit;
   # doctor's identity checks read `git config`, which that override would
   # answer — drop it so the -u probes below see the real config.
   unset GIT_CONFIG_COUNT GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0
   H="$BATS_TEST_TMPDIR/hearth"
-  lab install hearth --at "$H" --owner "$GIT_AUTHOR_NAME" >/dev/null
+  peninsula install hearth --at "$H" --owner "$GIT_AUTHOR_NAME" >/dev/null
   in_lab "$H" install-hooks >/dev/null
   BIN="$BATS_TEST_TMPDIR/bin"
   mkdir -p "$BIN"
@@ -20,7 +20,7 @@ setup() {
 }
 
 doctor_with() {
-  run env "$@" bash -c 'lab "$@"' _ doctor --lab "$H"
+  run env "$@" bash -c 'peninsula "$@"' _ doctor --lab "$H"
 }
 
 # Run the doctor script with an exact env, bypassing mise run's PATH
@@ -34,7 +34,7 @@ doctor_directly_with() {
 }
 
 @test "doctor reports every environment line ok when the tool has what it needs" {
-  require_lab_tasks version
+  require_peninsula_tasks version
   doctor_with PATH="$BIN:$PATH:$HOME/.local/bin"
   assert_success
   assert_output_contains "ok:   bash $(bash --version | sed -n '1s/.*version \([0-9][0-9.]*\).*/\1/p')"
@@ -44,7 +44,7 @@ doctor_directly_with() {
   assert_output_contains "ok:   mise on PATH"
   assert_output_contains "ok:   jq on PATH"
   assert_output_contains "ok:   ~/.local/bin on PATH"
-  assert_output_contains "ok:   framework: made at $(lab version), this tool's version"
+  assert_output_contains "ok:   framework: made at $(peninsula version), this tool's version"
   ! [[ "$output" == *"warn:"* ]]
   ! [[ "$output" == *"note:"* ]]
 }
@@ -52,8 +52,8 @@ doctor_directly_with() {
 @test "doctor fails without a git identity, naming the key to set" {
   doctor_with -u GIT_AUTHOR_NAME -u GIT_AUTHOR_EMAIL -u GIT_COMMITTER_NAME -u GIT_COMMITTER_EMAIL
   assert_failure
-  assert_output_contains "fail: git user.name is unset, so lab install cannot commit → git config --global user.name"
-  assert_output_contains "fail: git user.email is unset, so lab install cannot commit → git config --global user.email"
+  assert_output_contains "fail: git user.name is unset, so peninsula install cannot commit → git config --global user.name"
+  assert_output_contains "fail: git user.email is unset, so peninsula install cannot commit → git config --global user.email"
   assert_output_contains "doctor: 2 failing"
   git -C "$H" config user.name "Ada"
   git -C "$H" config user.email "ada@example.invalid"
@@ -64,12 +64,12 @@ doctor_directly_with() {
 
 @test "doctor warns when the shim would run without jq and when ~/.local/bin is off PATH" {
   farm="$(path_without jq)"
-  doctor_directly_with LAB_CALLER_PWD="$CALLER" PATH="$farm"
+  doctor_directly_with PENINSULA_CALLER_PWD="$CALLER" PATH="$farm"
   assert_success
-  assert_output_contains "warn: jq is not on PATH: without it the lab shim runs 'lab agent add' as 'mise run agent add' → install jq"
+  assert_output_contains "warn: jq is not on PATH: without it the peninsula shim runs 'peninsula agent add' as 'mise run agent add' → install jq"
   assert_output_contains "warn: ~/.local/bin is not on PATH, and shiv and mise install there → export PATH=\"\$HOME/.local/bin:\$PATH\""
   assert_output_contains "ok:   mise on PATH"
-  doctor_directly_with -u LAB_CALLER_PWD PATH="$farm"
+  doctor_directly_with -u PENINSULA_CALLER_PWD PATH="$farm"
   ! [[ "$output" == *"jq"* ]]
 }
 
@@ -81,18 +81,18 @@ doctor_directly_with() {
   chmod +x "$BIN/bash" "$BIN/git"
   doctor_with PATH="$BIN:$PATH"
   assert_failure
-  assert_output_contains "fail: bash 3.2.57: lab needs bash 4 or newer first on PATH"
-  assert_output_contains "fail: git 2.20.1: lab install needs git 2.28 or newer for git init -b"
+  assert_output_contains "fail: bash 3.2.57: peninsula needs bash 4 or newer first on PATH"
+  assert_output_contains "fail: git 2.20.1: peninsula install needs git 2.28 or newer for git init -b"
   assert_output_contains "doctor: 2 failing"
 }
 
 @test "doctor notes the framework version a lab records against the one checking it, and never fails on it" {
-  require_lab_tasks version
-  doctor_with LAB_FRAMEWORK_VERSION=v5.0.0
+  require_peninsula_tasks version
+  doctor_with PENINSULA_FRAMEWORK_VERSION=v5.0.0
   assert_success
-  assert_output_contains "note: framework: made at $(lab version); this tool is v5.0.0"
+  assert_output_contains "note: framework: made at $(peninsula version); this tool is v5.0.0"
   sed -i '/^on [0-9-]*, at /d' "$H/README.md"
   doctor_with
   assert_success
-  assert_output_contains "note: framework: the README records no framework version (this tool is $(lab version))"
+  assert_output_contains "note: framework: the README records no framework version (this tool is $(peninsula version))"
 }

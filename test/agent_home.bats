@@ -3,16 +3,16 @@
 load test_helper
 
 setup() {
-  lab_setup
+  peninsula_setup
   H="$BATS_TEST_TMPDIR/hearth"
-  lab install hearth --at "$H" >/dev/null
-  lab agent add vulcan --lab "$H" --role backend --owns server/ >/dev/null
+  peninsula install hearth --at "$H" >/dev/null
+  peninsula agent add vulcan --lab "$H" --role backend --owns server/ >/dev/null
 }
 
 @test "agent home makes missing home notes for a rostered agent and keeps existing ones" {
-  require_lab_tasks install agent/add agent/home
+  require_peninsula_tasks install agent/add agent/home
   rm -f "$H/.agents/notes/vulcan-home.md" "$H/.agents/notes/vulcan-scratchpad.md"
-  run lab agent home vulcan --lab "$H"
+  run peninsula agent home vulcan --lab "$H"
   assert_success
   assert_output_contains "create:"
   [ -f "$H/.agents/notes/vulcan-home.md" ]
@@ -21,29 +21,29 @@ setup() {
   assert_file_contains "$H/.agents/notes/vulcan-home.md" "$H/.agents/notes/vulcan-home.md"
   ! grep -rq '{{' "$H/.agents/notes/vulcan-home.md" "$H/.agents/notes/vulcan-scratchpad.md"
 
-  run lab agent home vulcan --lab "$H"
+  run peninsula agent home vulcan --lab "$H"
   assert_success
   assert_output_contains "keep:"
   assert_output_contains "already exists"
 }
 
 @test "agent home refuses a name that is not on the roster" {
-  require_lab_tasks install agent/add agent/home
-  run lab agent home nobody --lab "$H"
+  require_peninsula_tasks install agent/add agent/home
+  run peninsula agent home nobody --lab "$H"
   assert_failure
   assert_output_contains "not on the roster"
 }
 
 @test "agent home renders a builder's ownership and a judge's stance from the roster" {
-  require_lab_tasks install agent/add agent/home
+  require_peninsula_tasks install agent/add agent/home
   rm -f "$H/.agents/notes/vulcan-home.md" "$H/.agents/notes/vulcan-scratchpad.md"
-  run lab agent home vulcan --lab "$H"
+  run peninsula agent home vulcan --lab "$H"
   assert_output_contains "create:"
   assert_file_contains "$H/.agents/notes/vulcan-home.md" "server/"
 
-  lab agent add argus --lab "$H" --role review >/dev/null
+  peninsula agent add argus --lab "$H" --role review >/dev/null
   rm -f "$H/.agents/notes/argus-home.md" "$H/.agents/notes/argus-scratchpad.md"
-  run lab agent home argus --lab "$H"
+  run peninsula agent home argus --lab "$H"
   assert_output_contains "create:"
   [ -f "$H/.agents/notes/argus-home.md" ]
 }

@@ -17,7 +17,7 @@ gum = "0.17.0"
 "shiv:rudi" = "0.5.4"
 
 [_.codebase]
-name = "lab"
+name = "peninsula"
 lint = ["@all"]
 # This tested aggregate owns lint; Codebase checks the CI call, not task internals.
 ci_lint_gate = "mise run validate --verbose"

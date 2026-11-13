@@ -14,7 +14,7 @@ write_passing_test() {
 }
 
 @test "options-only calls use the configured default test directory" {
-  run lab_isolated test --jobs 1 --filter '^standard skeleton surfaces exist$'
+  run peninsula_isolated test --jobs 1 --filter '^standard skeleton surfaces exist$'
 
   [ "$status" -eq 0 ]
   [[ "$output" == *'1..1'* ]]
@@ -25,7 +25,7 @@ write_passing_test() {
   local target="$BATS_TEST_TMPDIR/explicit.bats"
   write_passing_test "$target" 'explicit target only'
 
-  run lab_isolated test --jobs 1 "$target"
+  run peninsula_isolated test --jobs 1 "$target"
 
   [ "$status" -eq 0 ]
   [[ "$output" == *'1..1'* ]]
@@ -33,7 +33,7 @@ write_passing_test() {
 }
 
 @test "relative test targets resolve from the repository root" {
-  run lab_isolated test --jobs 1 test/skeleton.bats --filter '^standard skeleton surfaces exist$'
+  run peninsula_isolated test --jobs 1 test/skeleton.bats --filter '^standard skeleton surfaces exist$'
 
   [ "$status" -eq 0 ]
   [[ "$output" == *'1..1'* ]]
@@ -44,7 +44,7 @@ write_passing_test() {
   local target="$BATS_TEST_TMPDIR/explicit target/passing test.bats"
   write_passing_test "$target" 'whitespace target'
 
-  run lab_isolated test --jobs 2 "$target"
+  run peninsula_isolated test --jobs 2 "$target"
 
   [ "$status" -eq 0 ]
   [[ "$output" == *'1..1'* ]]
@@ -86,7 +86,7 @@ BATS
   } > "$probe_dir/two.bats"
 
   export PROBE_DIR="$barrier_dir"
-  run lab_isolated test "$probe_dir"
+  run peninsula_isolated test "$probe_dir"
 
   [ "$status" -eq 0 ]
 }
@@ -122,7 +122,7 @@ BATS
   } > "$probe_dir/within-file.bats"
 
   export PROBE_DIR="$barrier_dir"
-  run lab_isolated test "$probe_dir"
+  run peninsula_isolated test "$probe_dir"
 
   [ "$status" -eq 0 ]
 }

@@ -12,7 +12,7 @@ load test_helper
     .mise/tasks/validate \
     .mise/tasks/doctor \
     .github/workflows/test.yml \
-    lib/lab.sh \
+    lib/peninsula.sh \
     lib/lineage-names
   do
     [ -e "$REPO_DIR/$path" ]
@@ -26,7 +26,7 @@ load test_helper
 }
 
 @test "Codebase uses the stable lab name and evolving all group" {
-  run grep -n -x -F 'name = "lab"' "$REPO_DIR/mise.toml"
+  run grep -n -x -F 'name = "peninsula"' "$REPO_DIR/mise.toml"
   [ "$status" -eq 0 ]
 
   run grep -n -x -F 'lint = ["@all"]' "$REPO_DIR/mise.toml"
@@ -39,8 +39,8 @@ load test_helper
 }
 
 @test "doctor is the product's lab check: the tool repo itself is not a lab" {
-  require_lab_tasks doctor
-  run lab doctor
+  require_peninsula_tasks doctor
+  run peninsula doctor
   [ "$status" -eq 1 ]
   [[ "$output" == *"not a lab"* ]]
 }
@@ -51,7 +51,7 @@ load test_helper
     task_name="${relative_path%/_default}"
     task_name="${task_name//\//:}"
 
-    run lab "$task_name" --help
+    run peninsula "$task_name" --help
     [ "$status" -eq 0 ]
     [[ "$output" == *"Examples:"* ]]
   done < <(find "$REPO_DIR/.mise/tasks" -type f -print | sort)

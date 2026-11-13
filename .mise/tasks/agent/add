@@ -5,11 +5,11 @@
 #USAGE flag "--role <role>" help="Two or three words: what the agent is for; defaults to 'stewardship' for the steward"
 #USAGE flag "--owns <dir>" help="Directory under the work tree a builder owns, with a trailing slash; without it the agent is a judge"
 #USAGE flag "--charge <charge>" help="One sentence on what the agent does; defaults to a sentence built from the kind"
-#USAGE example "lab agent add vulcan --role backend --owns server/ --charge 'Owns the schema, the domain model and the API.'" header="A builder"
-#USAGE example "lab agent add argus --role 'review and security' --charge 'Reads every pull request into main before the owner merges it.'" header="A judge"
+#USAGE example "peninsula agent add vulcan --role backend --owns server/ --charge 'Owns the schema, the domain model and the API.'" header="A builder"
+#USAGE example "peninsula agent add argus --role 'review and security' --charge 'Reads every pull request into main before the owner merges it.'" header="A judge"
 set -euo pipefail
 
-source "$MISE_CONFIG_ROOT/lib/lab.sh"
+source "$MISE_CONFIG_ROOT/lib/peninsula.sh"
 
 NAME="${usage_name:?an agent name is required}"
 LAB="$(lab_root "${usage_lab:-.}")"

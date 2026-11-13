@@ -38,7 +38,7 @@ agents="$(awk -F '\t' '!/^#/ && NF { print $1 }' "$roster" | tr '\n' ' ')"
 if [ -n "$agents" ]; then
   echo "$agents"
 else
-  echo "nobody yet → lab agent add <name> --lab $LAB_DIR --role <role>"
+  echo "nobody yet → peninsula agent add <name> --lab $LAB_DIR --role <role>"
 fi
 
 echo ""

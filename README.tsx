@@ -28,7 +28,7 @@ import {
 } from "readme";
 
 const PROJECT = {
-  name: "lab",
+  name: "peninsula",
   oneLine: "The starting point of a lab of agents.",
   tagline: "The rules, the roster, the queue and the checks — in place before the first agent wakes.",
   license: "MIT",
@@ -135,13 +135,15 @@ const emitted = [
   [".agents/test/*.bats", "the lab's own checks, roster-driven so they stay true as agents join"],
   [".agents/secrets/", "granted credentials, git-ignored and machine-local: each <name>/ holds an age identity and a secrets sops vault"],
   ["notes/ at the work root", "the product's written memory — docs under notes/docs/, numbered decisions under notes/decisions/, learned facts flat; shared and append-only, and never .agents/notes/, which stays the lab's"],
-  ["mise.toml, README.md, .gitignore", "the rest; the README carries the one line of attribution a lab keeps, Started from lab on <date>, at <version> — the version lab version printed when the lab was made, which lab doctor reads back against the version checking it"],
+  ["mise.toml, README.md, .gitignore", "the rest; the README carries the one line of attribution a lab keeps, Started from peninsula on <date>, at <version> — the version peninsula version printed when the lab was made, which peninsula doctor reads back against the version checking it"],
 ];
 
 const readme = (
   <>
     <Center>
       <Heading level={1}>{PROJECT.name}</Heading>
+
+      <Raw>{'<img src="logo.jpg" width="220" alt="The Scandinavian Peninsula covered in snow, seen from space" /><br />'}</Raw>
 
       <Paragraph>
         <Bold>{PROJECT.oneLine}</Bold>
@@ -176,17 +178,17 @@ const readme = (
         {"A "}
         <Bold>lab</Bold>
         {" is a directory where a roster of agents wake, read their rules, take work from a queue, and return. "}
-        <Code>lab install</Code>
+        <Code>peninsula install</Code>
         {" gives you one, complete: a contract that says what an agent may do without asking and what only you decide, a roster, a work queue, a lab style, a commit guard that refuses an author who is not on the roster, a steward that keeps the record true, and a set of checks. "}
-        <Code>lab agent add</Code>
+        <Code>peninsula agent add</Code>
         {" puts an agent on it, and "}
-        <Code>lab doctor</Code>
+        <Code>peninsula doctor</Code>
         {" measures the lab against the shape every lab shares. The command is "}
-        <Code>lab</Code>.
+        <Code>peninsula</Code>.
       </Paragraph>
 
       <Paragraph>
-        {"lab is "}
+        {"peninsula is "}
         <Link href="LICENSE">MIT-licensed</Link>
         {". A lab it writes belongs to whoever generated it and is not bound by the framework's license."}
       </Paragraph>
@@ -199,7 +201,7 @@ const readme = (
 
       <Paragraph>
         {"The framework asserts, and a fresh lab is complete. There is no menu of styles, packages or rule sets to choose from, and no question left in the contract for you to answer: the shape and the opinions are the framework's, and what you supply is facts — a name, a project, an owner, a roster — and, later, dated widenings in the contract. "}
-        <Code>lab doctor</Code>
+        <Code>peninsula doctor</Code>
         {" calls the lab healthy on the day it is made. "}
         <Code>.agents/notes/</Code>
         {" encrypts at rest from the first commit — readable in an unlocked checkout, opaque in git. Each larger capability — per-agent accounts and keys, mail, chat, CI wakes — is yours to file and switch on, in your own turn."}
@@ -207,7 +209,7 @@ const readme = (
     </Section>
 
     <Section title="Prerequisites">
-      <Paragraph>{"To run "}<Code>lab</Code>{":"}</Paragraph>
+      <Paragraph>{"To run "}<Code>peninsula</Code>{":"}</Paragraph>
       <List>
         <Item>bash 4 or newer, first on <Code>PATH</Code></Item>
         <Item>
@@ -217,7 +219,7 @@ const readme = (
           {" and "}
           <Code>user.email</Code>
           {" set: "}
-          <Code>lab install</Code>
+          <Code>peninsula install</Code>
           {" makes a bootstrap commit"}
         </Item>
         <Item>
@@ -226,9 +228,9 @@ const readme = (
           {" or "}
           <Code>shasum</Code>
           {": shiv's installer refuses without curl, git and jq; mise's installer checks its download with a sha tool; the "}
-          <Code>lab</Code>
+          <Code>peninsula</Code>
           {" shim resolves "}
-          <Code>lab agent add</Code>
+          <Code>peninsula agent add</Code>
           {" to "}
           <Code>agent:add</Code>
           {" through jq"}
@@ -238,7 +240,7 @@ const readme = (
           {", which installs "}
           <Link href="https://mise.jdx.dev">mise</Link>
           {" if it is absent; mise runs every "}
-          <Code>lab</Code>
+          <Code>peninsula</Code>
           {" command, and "}
           <Code>mise install</Code>
           {" in the clone brings the tools "}
@@ -248,7 +250,7 @@ const readme = (
       </List>
       <Paragraph>
         {"To live in a lab: git, bash and mise. A generated lab's own tasks never call shiv, and "}
-        <Code>lab doctor</Code>
+        <Code>peninsula doctor</Code>
         {" checks the list above — the bash and git versions, the git identity, mise and jq on "}
         <Code>PATH</Code>
         {" — and prints the fix for each line it fails. An agent the owner has given an account also needs "}
@@ -266,41 +268,41 @@ const readme = (
     <Section title="Install">
       <CodeBlock lang="bash">{`curl -fsSL shiv.knacklabs.co/install.sh | bash   # installs mise too, if absent
 mkdir -p ~/.config/shiv/sources                  # source file: see below
-echo '{"lab": "olavostauros/lab"}' > ~/.config/shiv/sources/lab.json
-MISE_JOBS=1 shiv install lab                   # serial: see below
-lab --version`}</CodeBlock>
+echo '{"peninsula": "olavostauros/peninsula"}' > ~/.config/shiv/sources/peninsula.json
+MISE_JOBS=1 shiv install peninsula                   # serial: see below
+peninsula --version`}</CodeBlock>
 
       <Paragraph>
         {"Restart the shell once after the first line: the installer adds a line to your shell rc and needs it. The source file is needed until "}
-        <Code>lab</Code>
+        <Code>peninsula</Code>
         {" is in shiv's own index ("}
         <Link href="https://github.com/KnickKnackLabs/shiv/pull/176">KnickKnackLabs/shiv#176</Link>
         {" is the request): without it, "}
-        <Code>shiv install lab</Code>
+        <Code>shiv install peninsula</Code>
         {" stops at "}
-        <Code>'lab' not found in package index</Code>
+        <Code>'peninsula' not found in package index</Code>
         {". Once that merges, the two source-file lines go; a fork under another name stays the same one line away from being installable as "}
-        <Code>lab</Code>
+        <Code>peninsula</Code>
         {" for its owner."}
       </Paragraph>
 
       <Paragraph>
         {"Bare "}
-        <Code>shiv install lab</Code>
+        <Code>shiv install peninsula</Code>
         {" takes the newest release tag; "}
-        <Code>shiv install lab@main</Code>
+        <Code>shiv install peninsula@main</Code>
         {" tracks "}
         <Code>main</Code>
         {", "}
-        <Code>shiv install lab@v0.1.0</Code>
+        <Code>shiv install peninsula@v0.1.0</Code>
         {" pins, and "}
-        <Code>shiv update lab</Code>
+        <Code>shiv update peninsula</Code>
         {" moves an install to the newest release. "}
-        <Code>lab --version</Code>
+        <Code>peninsula --version</Code>
         {" is what a bug report quotes: the tag at the install's "}
         <Code>HEAD</Code>
         {", else its short commit, then the branch and the age of the last commit. "}
-        <Code>lab version</Code>
+        <Code>peninsula version</Code>
         {" is the same tag or short commit from the inside, and it is what a lab records when it is made."}
       </Paragraph>
 
@@ -327,26 +329,26 @@ lab --version`}</CodeBlock>
       </Paragraph>
 
       <Heading level={3}>From a checkout</Heading>
-      <CodeBlock lang="bash">{`git clone https://github.com/olavostauros/lab
-cd lab && mise trust && mise install`}</CodeBlock>
+      <CodeBlock lang="bash">{`git clone https://github.com/olavostauros/peninsula
+cd peninsula && mise trust && mise install`}</CodeBlock>
       <Paragraph>
         <Code>mise trust</Code>
         {" is asked once, because "}
         <Code>mise.toml</Code>
         {" sets tool and task settings for this directory. Every "}
-        <Code>lab</Code>
+        <Code>peninsula</Code>
         {" command in this README is a "}
         <Code>mise run</Code>
         {" task of this checkout ("}
-        <Code>lab install</Code>
+        <Code>peninsula install</Code>
         {" is "}
         <Code>mise run install</Code>
         {", "}
-        <Code>lab agent add</Code>
+        <Code>peninsula agent add</Code>
         {" is "}
         <Code>mise run agent:add</Code>
         {", "}
-        <Code>lab version</Code>
+        <Code>peninsula version</Code>
         {" is "}
         <Code>mise run version</Code>
         {"), which is how CI runs it:"}
@@ -356,30 +358,30 @@ cd lab && mise trust && mise install`}</CodeBlock>
         {"To put a working clone on "}
         <Code>PATH</Code>
         {" as "}
-        <Code>lab</Code>
+        <Code>peninsula</Code>
         {" — the way to try the shim against a branch — register the checkout itself as a local-path package:"}
       </Paragraph>
-      <CodeBlock lang="bash">{`shiv install lab "$PWD"`}</CodeBlock>
+      <CodeBlock lang="bash">{`shiv install peninsula "$PWD"`}</CodeBlock>
     </Section>
 
     <Section title="Quick start">
       <Paragraph>
         {"Run "}
-        <Code>lab install</Code>
+        <Code>peninsula install</Code>
         {" with no name and it asks for each fact it needs — where the lab lives, its name, its owner — scaffolds, then offers the roster, the hooks and a first check. Given a name it asks nothing: the flags are the same facts, and CI never sees a prompt."}
       </Paragraph>
       <CodeBlock lang="bash">{`# A lab — a new directory that is a repo of its own
-lab install example --at ~/example --owner 'Your Name'
+peninsula install example --at ~/example --owner 'Your Name'
 
 cd ~/project
-lab agent add builder --role implementation --owns src/ \
+peninsula agent add builder --role implementation --owns src/ \
   --charge 'Builds what the queue asks for, under src/.'
-lab agent add judge --role review \
+peninsula agent add judge --role review \
   --charge 'Reads every pull request into main before the owner merges it.'
 
 mise run install-hooks
 mise run welcome
-lab doctor            # healthy`}</CodeBlock>
+peninsula doctor            # healthy`}</CodeBlock>
 
       <Paragraph>
         <Code>--owner</Code>
@@ -452,7 +454,7 @@ lab doctor            # healthy`}</CodeBlock>
 
       <Paragraph>
         {"What is not yours is the shape: the tiers, the two-key rule, the markers, the guard, one steward. "}
-        <Code>lab doctor</Code>
+        <Code>peninsula doctor</Code>
         {" checks that shape, and it also fails on a leftover "}
         <Code>{"{{KEY}}"}</Code>
         {" or on the name of a lab the framework grew out of (the list is "}
@@ -524,7 +526,7 @@ lab doctor            # healthy`}</CodeBlock>
           {" and "}
           <Code>.agents/notes/&lt;name&gt;-scratchpad.md</Code>
           {" — the agent's own startup contract and session memory, encrypted at rest with the rest of the notes; "}
-          <Code>lab agent home &lt;name&gt;</Code>
+          <Code>peninsula agent home &lt;name&gt;</Code>
           {" rebuilds them if they are ever lost"}
         </Item>
       </List>
@@ -562,7 +564,7 @@ lab doctor            # healthy`}</CodeBlock>
     </Section>
 
     <Section title="Invariants">
-      <Paragraph>{"These hold in every lab, and "}<Code>lab doctor</Code>{" checks the ones a script can:"}</Paragraph>
+      <Paragraph>{"These hold in every lab, and "}<Code>peninsula doctor</Code>{" checks the ones a script can:"}</Paragraph>
       <List>
         <Item>
           <Bold>The contract is authority-only</Bold>
@@ -609,7 +611,7 @@ lab doctor            # healthy`}</CodeBlock>
         <Item>
           <Bold>A fresh lab is complete.</Bold>
           {" The framework asserts; the owner supplies facts and grants widenings. "}
-          <Code>lab install x && lab doctor --lab x</Code>
+          <Code>peninsula install x && peninsula doctor --lab x</Code>
           {" exits 0, and no generated file names a lineage or a runner, or depends on a toolchain outside the "}
           <Code>bats</Code>
           {" pin."}
@@ -632,19 +634,19 @@ lab doctor            # healthy`}</CodeBlock>
       </Table>
       <Paragraph>
         {"Every public task is also a shim command — "}
-        <Code>lab install</Code>
+        <Code>peninsula install</Code>
         {", "}
-        <Code>lab doctor</Code>
+        <Code>peninsula doctor</Code>
         {", "}
-        <Code>lab version</Code>
+        <Code>peninsula version</Code>
         {", "}
-        <Code>lab agent add</Code>
+        <Code>peninsula agent add</Code>
         {", "}
-        <Code>lab agent home</Code>
+        <Code>peninsula agent home</Code>
         {", "}
-        <Code>lab test</Code>
+        <Code>peninsula test</Code>
         {", "}
-        <Code>lab validate</Code>
+        <Code>peninsula validate</Code>
         {" — and nothing is hidden; the shim resolves "}
         <Code>agent add</Code>
         {" to "}
@@ -664,7 +666,7 @@ git diff --check`}</CodeBlock>
 
       <Paragraph>
         {"The tests scaffold labs into temporary directories — homes included — and "}
-        <Code>LAB_DEFINITIONS_DIR</Code>
+        <Code>PENINSULA_DEFINITIONS_DIR</Code>
         {" points at an empty directory they assert stays empty: nothing here writes a runner's files. Nothing under your home is touched."}
       </Paragraph>
 

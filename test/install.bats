@@ -3,12 +3,12 @@
 load test_helper
 
 setup() {
-  lab_setup
+  peninsula_setup
 }
 
 @test "install scaffolds a standalone lab with its own repo and a bootstrap commit" {
-  require_lab_tasks install
-  run lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
+  require_peninsula_tasks install
+  run peninsula install hearth --at "$BATS_TEST_TMPDIR/hearth"
   assert_success
   assert_output_contains "create: AGENTS.md"
   assert_output_contains "commit: bootstrap the lab"
@@ -29,8 +29,8 @@ setup() {
 }
 
 @test "install renders the lab name into the contract, the guard and the env" {
-  require_lab_tasks install
-  lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
+  require_peninsula_tasks install
+  peninsula install hearth --at "$BATS_TEST_TMPDIR/hearth"
   h="$BATS_TEST_TMPDIR/hearth"
   assert_file_contains "$h/AGENTS.md" "# hearth"
   assert_file_contains "$h/AGENTS.md" "HEARTH_OWNER_COMMIT=1"
@@ -42,36 +42,36 @@ setup() {
 }
 
 @test "install --project names what the lab works on" {
-  require_lab_tasks install
-  lab install hearth --at "$BATS_TEST_TMPDIR/hearth" --project "Evento Livre"
+  require_peninsula_tasks install
+  peninsula install hearth --at "$BATS_TEST_TMPDIR/hearth" --project "Evento Livre"
   assert_file_contains "$BATS_TEST_TMPDIR/hearth/AGENTS.md" "agents of **Evento Livre**"
   assert_file_contains "$BATS_TEST_TMPDIR/hearth/mise.toml" 'LAB_PROJECT = "Evento Livre"'
 }
 
 @test "install refuses an existing path — it makes a new directory" {
-  require_lab_tasks install
+  require_peninsula_tasks install
   h="$BATS_TEST_TMPDIR/hearth"
   mkdir -p "$h"
-  run lab install hearth --at "$h"
+  run peninsula install hearth --at "$h"
   assert_failure
   assert_output_contains "already exists"
   printf 'mine\n' > "$BATS_TEST_TMPDIR/plain-file"
-  run lab install hearth --at "$BATS_TEST_TMPDIR/plain-file"
+  run peninsula install hearth --at "$BATS_TEST_TMPDIR/plain-file"
   assert_failure
   assert_output_contains "already exists"
 }
 
 @test "install rejects a name that is not lowercase-kebab" {
-  require_lab_tasks install
-  run lab install Hearth --at "$BATS_TEST_TMPDIR/x"
+  require_peninsula_tasks install
+  run peninsula install Hearth --at "$BATS_TEST_TMPDIR/x"
   assert_failure
-  run lab install "my lab" --at "$BATS_TEST_TMPDIR/y"
+  run peninsula install "my lab" --at "$BATS_TEST_TMPDIR/y"
   assert_failure
 }
 
 @test "a fresh lab passes its own checks" {
-  require_lab_tasks install
-  lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
+  require_peninsula_tasks install
+  peninsula install hearth --at "$BATS_TEST_TMPDIR/hearth"
   run in_lab "$BATS_TEST_TMPDIR/hearth" test
   assert_success
   assert_output_contains "== bats =="
@@ -79,8 +79,8 @@ setup() {
 }
 
 @test "a fresh lab's welcome reports the steward on the roster and a missing guard" {
-  require_lab_tasks install
-  lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
+  require_peninsula_tasks install
+  peninsula install hearth --at "$BATS_TEST_TMPDIR/hearth"
   run env -u GIT_AUTHOR_NAME bash -c 'in_lab "$@"' _ "$BATS_TEST_TMPDIR/hearth" welcome
   assert_success
   assert_output_contains "not activated"
@@ -90,9 +90,9 @@ setup() {
 }
 
 @test "install names the signing key before the bootstrap commit when the git config signs" {
-  require_lab_tasks install
+  require_peninsula_tasks install
   signing_env
-  run lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
+  run peninsula install hearth --at "$BATS_TEST_TMPDIR/hearth"
   assert_success
   assert_output_contains "sign: the bootstrap commit is signed (openpgp, key 0123456789ABCDEF)"
   assert_output_contains "--no-commit leaves the files"
@@ -102,29 +102,29 @@ setup() {
 }
 
 @test "install names the committer identity when the config signs with no user.signingkey" {
-  require_lab_tasks install
+  require_peninsula_tasks install
   signing_env
   export GIT_CONFIG_COUNT=3
-  run lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
+  run peninsula install hearth --at "$BATS_TEST_TMPDIR/hearth"
   assert_success
-  assert_output_contains "sign: the bootstrap commit is signed (openpgp, no user.signingkey — picked by the committer identity lab test <lab-test@example.invalid>)"
+  assert_output_contains "sign: the bootstrap commit is signed (openpgp, no user.signingkey — picked by the committer identity peninsula test <peninsula-test@example.invalid>)"
 }
 
 @test "install says nothing about signing when commits are unsigned or --no-commit" {
-  require_lab_tasks install
-  run lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
+  require_peninsula_tasks install
+  run peninsula install hearth --at "$BATS_TEST_TMPDIR/hearth"
   assert_success
   ! [[ "$output" == *"sign:"* ]]
   signing_env
-  run lab install hall --at "$BATS_TEST_TMPDIR/hall" --no-commit
+  run peninsula install hall --at "$BATS_TEST_TMPDIR/hall" --no-commit
   assert_success
   ! [[ "$output" == *"sign:"* ]]
   [ ! -e "$FAKE_GPG_LOG" ]
 }
 
 @test "welcome reports the signing state, the key, and that an agent signs as the owner" {
-  require_lab_tasks install
-  lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
+  require_peninsula_tasks install
+  peninsula install hearth --at "$BATS_TEST_TMPDIR/hearth"
   run in_lab "$BATS_TEST_TMPDIR/hearth" welcome
   assert_success
   assert_output_contains "== signing =="
@@ -142,8 +142,8 @@ setup() {
 }
 
 @test "the lab README and the steward's home note say what a signing machine means" {
-  require_lab_tasks install
-  lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
+  require_peninsula_tasks install
+  peninsula install hearth --at "$BATS_TEST_TMPDIR/hearth"
   h="$BATS_TEST_TMPDIR/hearth"
   assert_file_contains "$h/README.md" "## Signing"
   assert_file_contains "$h/README.md" "signed with the owner's key"
@@ -154,8 +154,8 @@ setup() {
 }
 
 @test "install-hooks wires the guard into the work tree and the guard refuses the owner" {
-  require_lab_tasks install
-  lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
+  require_peninsula_tasks install
+  peninsula install hearth --at "$BATS_TEST_TMPDIR/hearth"
   h="$BATS_TEST_TMPDIR/hearth"
   run in_lab "$h" install-hooks
   assert_success
@@ -172,8 +172,8 @@ setup() {
 }
 
 @test "install ships a steward by default, homed inside the lab, with no GitHub identity and no mail" {
-  require_lab_tasks install
-  lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
+  require_peninsula_tasks install
+  peninsula install hearth --at "$BATS_TEST_TMPDIR/hearth"
   h="$BATS_TEST_TMPDIR/hearth"
   grep -q $'^steward\tstewardship\t\tsteward$' "$h/.agents/roster.tsv"
   assert_file_contains "$h/AGENTS.md" "- **steward** — stewardship. Owns no directory."
@@ -195,18 +195,18 @@ setup() {
 }
 
 @test "two labs may share a name on one machine, and each keeps its own steward" {
-  require_lab_tasks install
-  lab install hearth --at "$BATS_TEST_TMPDIR/one/hearth"
-  run lab install hearth --at "$BATS_TEST_TMPDIR/two/hearth"
+  require_peninsula_tasks install
+  peninsula install hearth --at "$BATS_TEST_TMPDIR/one/hearth"
+  run peninsula install hearth --at "$BATS_TEST_TMPDIR/two/hearth"
   assert_success
   [ -f "$BATS_TEST_TMPDIR/one/hearth/.agents/notes/steward-home.md" ]
   [ -f "$BATS_TEST_TMPDIR/two/hearth/.agents/notes/steward-home.md" ]
 }
 
 @test "two labs on one machine each keep their own steward" {
-  require_lab_tasks install
-  lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
-  run lab install hall --at "$BATS_TEST_TMPDIR/hall"
+  require_peninsula_tasks install
+  peninsula install hearth --at "$BATS_TEST_TMPDIR/hearth"
+  run peninsula install hall --at "$BATS_TEST_TMPDIR/hall"
   assert_success
   [ -f "$BATS_TEST_TMPDIR/hearth/.agents/notes/steward-home.md" ]
   [ -f "$BATS_TEST_TMPDIR/hall/.agents/notes/steward-home.md" ]
@@ -214,21 +214,21 @@ setup() {
 }
 
 @test "install keys the lab by its name, not by the basename of --at" {
-  require_lab_tasks install agent/add doctor
-  lab install hearth --at "$BATS_TEST_TMPDIR/project/lab"
+  require_peninsula_tasks install agent/add doctor
+  peninsula install hearth --at "$BATS_TEST_TMPDIR/project/lab"
   h="$BATS_TEST_TMPDIR/project/lab"
   assert_file_contains "$h/mise.toml" 'LAB_NAME = "hearth"'
   [ -f "$h/.agents/notes/steward-home.md" ]
   assert_file_contains "$h/.agents/notes/steward.md" "$h/.agents/notes/steward-home.md"
-  lab agent add builder --lab "$h" --role implementation --owns src/
+  peninsula agent add builder --lab "$h" --role implementation --owns src/
   grep -q $'^builder\t' "$h/.agents/roster.tsv"
-  run lab doctor --lab "$h"
+  run peninsula doctor --lab "$h"
   assert_success
 }
 
 @test "the steward's guard and env work like any agent's, and welcome points at its home" {
-  require_lab_tasks install
-  lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
+  require_peninsula_tasks install
+  peninsula install hearth --at "$BATS_TEST_TMPDIR/hearth"
   h="$BATS_TEST_TMPDIR/hearth"
   run env -u LAB_DIR -u HEARTH_OWNER_COMMIT GIT_AUTHOR_NAME=steward "$h/.agents/hooks/agent-identity"
   assert_success
@@ -241,18 +241,18 @@ setup() {
 }
 
 @test "install encrypts the lab's .agents/notes at rest" {
-  require_lab_tasks install doctor
-  lab install hall --at "$BATS_TEST_TMPDIR/hall"
+  require_peninsula_tasks install doctor
+  peninsula install hall --at "$BATS_TEST_TMPDIR/hall"
   h="$BATS_TEST_TMPDIR/hall"
   assert_file_contains "$h/.gitattributes" '.agents/notes/** filter=git-crypt'
   [ -f "$h/.agents/notes/.manifest" ]
-  run lab doctor --lab "$h"
+  run peninsula doctor --lab "$h"
   assert_output_contains "ok:   .agents/notes encrypts at rest"
 }
 
 @test "install-hooks hangs the guard off the notes dispatcher and patches --dir once" {
-  require_lab_tasks install
-  lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
+  require_peninsula_tasks install
+  peninsula install hearth --at "$BATS_TEST_TMPDIR/hearth"
   h="$BATS_TEST_TMPDIR/hearth"
   mkdir -p "$h/.git/hooks/pre-commit.d"
   printf 'NOTES_ROOT=".agents/notes"\n      run_notes obfuscate "${unobfuscated[@]}" >&2\n' \
@@ -266,7 +266,7 @@ setup() {
 }
 
 @test "install with no name asks for the facts and scaffolds a standalone lab" {
-  require_lab_tasks install
+  require_peninsula_tasks install
   answers="$BATS_TEST_TMPDIR/answers"
   printf '%s\n' \
     "BAD NAME" \
@@ -276,7 +276,7 @@ setup() {
     "" \
     "y" \
     "n" "n" "n" "n" > "$answers"
-  CALLER="$BATS_TEST_TMPDIR/caller" LAB_PROMPT_TTY="$answers" run lab install
+  CALLER="$BATS_TEST_TMPDIR/caller" PENINSULA_PROMPT_TTY="$answers" run peninsula install
   assert_success
   assert_output_contains "commit: bootstrap the lab"
   assert_output_contains "done: hearth at"
@@ -284,7 +284,7 @@ setup() {
 }
 
 @test "install with no name asks, scaffolds a lab and puts an agent on the roster" {
-  require_lab_tasks install
+  require_peninsula_tasks install
   answers="$BATS_TEST_TMPDIR/answers"
   printf '%s\n' \
     "hall" \
@@ -300,7 +300,7 @@ setup() {
     "" \
     "n" \
     "n" "n" "n" > "$answers"
-  CALLER="$BATS_TEST_TMPDIR/caller" LAB_PROMPT_TTY="$answers" run lab install
+  CALLER="$BATS_TEST_TMPDIR/caller" PENINSULA_PROMPT_TTY="$answers" run peninsula install
   assert_success
   h="$BATS_TEST_TMPDIR/caller/hall"
   [ -f "$h/AGENTS.md" ]
@@ -309,7 +309,7 @@ setup() {
 }
 
 @test "install with no name honors flags already given in guided mode" {
-  require_lab_tasks install
+  require_peninsula_tasks install
   answers="$BATS_TEST_TMPDIR/answers"
   printf '%s\n' \
     "hall" \
@@ -317,7 +317,7 @@ setup() {
     "" \
     "y" \
     "n" "n" "n" "n" > "$answers"
-  CALLER="$BATS_TEST_TMPDIR/caller" LAB_PROMPT_TTY="$answers" run lab install --project "the forge"
+  CALLER="$BATS_TEST_TMPDIR/caller" PENINSULA_PROMPT_TTY="$answers" run peninsula install --project "the forge"
   assert_success
   h="$BATS_TEST_TMPDIR/caller/hall"
   assert_file_contains "$h/AGENTS.md" "agents of **the forge**"
@@ -325,7 +325,7 @@ setup() {
 }
 
 @test "install with no name writes nothing when the owner declines" {
-  require_lab_tasks install
+  require_peninsula_tasks install
   answers="$BATS_TEST_TMPDIR/answers"
   printf '%s\n' \
     "hearth" \
@@ -333,24 +333,24 @@ setup() {
     "" \
     "" \
     "n" > "$answers"
-  CALLER="$BATS_TEST_TMPDIR/caller" LAB_PROMPT_TTY="$answers" run lab install
+  CALLER="$BATS_TEST_TMPDIR/caller" PENINSULA_PROMPT_TTY="$answers" run peninsula install
   assert_failure
   assert_output_contains "nothing written"
   [ ! -e "$BATS_TEST_TMPDIR/hearth" ]
 }
 
 @test "install with no name and nothing to ask explains itself" {
-  require_lab_tasks install
+  require_peninsula_tasks install
   : > "$BATS_TEST_TMPDIR/answers"
-  CALLER="$BATS_TEST_TMPDIR/caller" LAB_PROMPT_TTY="$BATS_TEST_TMPDIR/answers" run lab install
+  CALLER="$BATS_TEST_TMPDIR/caller" PENINSULA_PROMPT_TTY="$BATS_TEST_TMPDIR/answers" run peninsula install
   assert_failure
   assert_output_contains "it needs a terminal, or answers on stdin"
 }
 
 @test "install with no name inside a lab points at it instead of nesting" {
-  require_lab_tasks install
-  lab install hearth --at "$BATS_TEST_TMPDIR/hearth"
-  CALLER="$BATS_TEST_TMPDIR/hearth" run lab install
+  require_peninsula_tasks install
+  peninsula install hearth --at "$BATS_TEST_TMPDIR/hearth"
+  CALLER="$BATS_TEST_TMPDIR/hearth" run peninsula install
   assert_success
   assert_output_contains "already the hearth lab"
 }

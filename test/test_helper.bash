@@ -1,27 +1,27 @@
 #!/usr/bin/env bash
-# Shared fixtures for lab tests.
+# Shared fixtures for peninsula tests.
 
 # Run a repo task through mise so tests exercise the real task path.
 # `agent add|home` maps to the agent:add|agent:home task names.
-lab() {
+peninsula() {
   local task="$1"
   shift
   case "$task" in
     agent) task="$task:$1"; shift ;;
   esac
   cd "$REPO_DIR" && env \
-    LAB_CALLER_PWD="${CALLER:-}" \
-    LAB_DEFINITIONS_DIR="${DEFINITIONS_DIR:-}" \
+    PENINSULA_CALLER_PWD="${CALLER:-}" \
+    PENINSULA_DEFINITIONS_DIR="${DEFINITIONS_DIR:-}" \
     GIT_CONFIG_GLOBAL=/dev/null \
     GIT_CONFIG_NOSYSTEM=1 \
     MISE_AUTO_INSTALL=0 \
     mise run -q "$task" "$@"
 }
-export -f lab
+export -f peninsula
 
 # Run the public task with only the environment needed by real concurrency
 # probes, excluding the per-test mock BATS and Rush commands.
-lab_isolated() {
+peninsula_isolated() {
   env -i \
     HOME="$HOME" \
     PATH="$PATH" \
@@ -30,7 +30,7 @@ lab_isolated() {
     PROBE_DIR="${PROBE_DIR:-}" \
     mise -C "$REPO_DIR" run -q "$@"
 }
-export -f lab_isolated
+export -f peninsula_isolated
 
 # A generated lab runs serial bats — rush is the repo's pin, not the
 # lab's — so the runner env the repo's test task exports must not leak in.
@@ -44,21 +44,21 @@ in_lab() {
 }
 export -f in_lab
 
-# A task counts as ported once it exists and is the lab's own — it sources
-# lib/lab.sh. Tests gated on this skip until their command lands.
-lab_task_ported() {
+# A task counts as ported once it exists and is the repo's own — it sources
+# lib/peninsula.sh. Tests gated on this skip until their command lands.
+peninsula_task_ported() {
   [ -f "$REPO_DIR/.mise/tasks/$1" ] &&
-    grep -qF 'lib/lab.sh' "$REPO_DIR/.mise/tasks/$1"
+    grep -qF 'lib/peninsula.sh' "$REPO_DIR/.mise/tasks/$1"
 }
-export -f lab_task_ported
+export -f peninsula_task_ported
 
-require_lab_tasks() {
+require_peninsula_tasks() {
   local task
   for task in "$@"; do
-    lab_task_ported "$task" || skip "not ported yet: mise task $task"
+    peninsula_task_ported "$task" || skip "not ported yet: mise task $task"
   done
 }
-export -f require_lab_tasks
+export -f require_peninsula_tasks
 
 # Minimal stand-ins for the notes toolchain so install/doctor tests run
 # offline: `notes setup --dir <d>` writes the git-crypt pattern and the
@@ -86,12 +86,12 @@ EOF
   export PATH="$bin:$PATH"
 }
 
-lab_setup() {
+peninsula_setup() {
   export CALLER="$BATS_TEST_TMPDIR/caller"
   export DEFINITIONS_DIR="$BATS_TEST_TMPDIR/definitions"
   export MISE_TRUSTED_CONFIG_PATHS="$BATS_TEST_TMPDIR"
-  export GIT_AUTHOR_NAME="lab test"
-  export GIT_AUTHOR_EMAIL="lab-test@example.invalid"
+  export GIT_AUTHOR_NAME="peninsula test"
+  export GIT_AUTHOR_EMAIL="peninsula-test@example.invalid"
   export GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME"
   export GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
   export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=user.name GIT_CONFIG_VALUE_0="$GIT_AUTHOR_NAME"

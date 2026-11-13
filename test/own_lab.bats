@@ -10,12 +10,12 @@ LAB_KEYS="LAB_NAME LAB_UPPER LAB_PATH WORK_PATH PROJECT CREATED FRAMEWORK_VERSIO
 AGENT_KEYS="AGENT ROLE OWNS CHARGE HOME_NOTE SCRATCHPAD_NOTE"
 
 setup() {
-  lab_setup
+  peninsula_setup
   LINEAGE="$(listed_names)|KnickKnackLabs|Knick Knack Labs|Bash tool|\[\[ABORT\]\]"
 }
 
 @test "the framework ships no lab or personal name outside lib/lineage-names and its own encrypted notes" {
-  run bash -c "grep -rniwE '$(listed_names)' --exclude-dir=.git --exclude-dir=notes --exclude=lineage-names '$REPO_DIR' | grep -vE 'olavostauros/lab([^a-z0-9-]|$)'"
+  run bash -c "grep -rniwE '$(listed_names)' --exclude-dir=.git --exclude-dir=notes --exclude=lineage-names '$REPO_DIR' | grep -vE 'olavostauros/lab([^a-z0-9-]|$)|olavostauros/peninsula([^a-z0-9-]|$)'"
   [ -z "$output" ]
   [ "$(awk '$1 == "lab"' "$REPO_DIR/lib/lineage-names" | wc -l)" -ge 1 ]
 }
@@ -38,7 +38,7 @@ setup() {
   [ -d "$REPO_DIR/scaffold/work" ]
   run find "$REPO_DIR" -path "$REPO_DIR/.git" -prune -o -name '*.tmpl' -print
   [ -z "$output" ]
-  run grep -rlE 'lab:decide|lab:rules|rules add|lab export|LAB_DEFINITIONS_DIR|harness/' "$REPO_DIR/scaffold" "$REPO_DIR/lib" "$REPO_DIR/.mise"
+  run grep -rlE 'lab:decide|lab:rules|rules add|lab export|PENINSULA_DEFINITIONS_DIR|harness/' "$REPO_DIR/scaffold" "$REPO_DIR/lib" "$REPO_DIR/.mise"
   [ -z "$output" ]
   run grep -rlE 'usage_(style|with|no_steward|kind|no_home)\b' "$REPO_DIR/lib" "$REPO_DIR/.mise"
   [ -z "$output" ]
@@ -66,12 +66,12 @@ setup() {
 }
 
 @test "a fresh lab names no lineage, no runner and no mail domain, and keeps one line of attribution" {
-  require_lab_tasks install agent/add version
+  require_peninsula_tasks install agent/add version
   h="$BATS_TEST_TMPDIR/hearth"
-  lab install hearth --at "$h"
-  lab agent add vulcan --lab "$h" --role backend --owns server/ >/dev/null
-  lab agent add argus --lab "$h" --role review >/dev/null
-  run bash -c "grep -rniwE '$LINEAGE' --exclude-dir=.git --exclude=mise.toml '$h' | grep -vE 'olavostauros/lab([^a-z0-9-]|$)'"
+  peninsula install hearth --at "$h"
+  peninsula agent add vulcan --lab "$h" --role backend --owns server/ >/dev/null
+  peninsula agent add argus --lab "$h" --role review >/dev/null
+  run bash -c "grep -rniwE '$LINEAGE' --exclude-dir=.git --exclude=mise.toml '$h' | grep -vE 'olavostauros/lab([^a-z0-9-]|$)|olavostauros/peninsula([^a-z0-9-]|$)'"
   [ -z "$output" ]
   run grep -niwE "$LINEAGE" "$h/mise.toml"
   [ "$output" = $'20:shiv = "https://github.com/KnickKnackLabs/vfox-shiv"\n23:"aqua:KnickKnackLabs/bats-core" = "1.14.0-kkl.3"\n28:registries = ["https://github.com/KnickKnackLabs/bats-core"]' ]
@@ -81,16 +81,16 @@ setup() {
   [ "$status" -eq 1 ]
   run grep -rn 'Tier 3 for the whole lab' "$h/AGENTS.md"
   [ "$status" -eq 1 ]
-  [ "$(grep -rho 'github.com/olavostauros/lab' --exclude-dir=.git "$h" | wc -l)" -eq 1 ]
-  assert_file_contains "$h/README.md" "Started from [lab](https://github.com/olavostauros/lab)"
-  assert_file_contains "$h/README.md" "on $(date +%Y-%m-%d), at $(lab version)."
-  [ "$(git -C "$h" log -1 --format=%s)" = "hearth: bootstrap the lab from lab" ]
+  [ "$(grep -rho 'github.com/olavostauros/peninsula' --exclude-dir=.git "$h" | wc -l)" -eq 1 ]
+  assert_file_contains "$h/README.md" "Started from [peninsula](https://github.com/olavostauros/peninsula)"
+  assert_file_contains "$h/README.md" "on $(date +%Y-%m-%d), at $(peninsula version)."
+  [ "$(git -C "$h" log -1 --format=%s)" = "hearth: bootstrap the lab from peninsula" ]
 }
 
 @test "the fresh contract holds the authority sections and three guard rules, asserts the merge rule, and wires the lab style" {
-  require_lab_tasks install
+  require_peninsula_tasks install
   h="$BATS_TEST_TMPDIR/hearth"
-  lab install hearth --at "$h"
+  peninsula install hearth --at "$h"
   run sed -nE 's/^\*\*([^*]+)(\*\*.*)?$/\1/p' "$h/AGENTS.md"
   expected="\`$h\` is a single shared checkout.
 Own your commits.
@@ -120,13 +120,13 @@ Notes are encrypted at rest."
 }
 
 @test "install renders --owner into the contract, falls back to git user.name, and fails when nobody is named" {
-  require_lab_tasks install
+  require_peninsula_tasks install
   h="$BATS_TEST_TMPDIR/hearth"
-  lab install hearth --at "$h" --owner "Ada"
+  peninsula install hearth --at "$h" --owner "Ada"
   assert_file_contains "$h/AGENTS.md" "The owner is **Ada**: the one human here, who files the queue, merges,"
-  lab install hall --at "$BATS_TEST_TMPDIR/hall"
-  assert_file_contains "$BATS_TEST_TMPDIR/hall/AGENTS.md" "The owner is **lab test**: the one human here"
-  run env GIT_CONFIG_COUNT=0 bash -c 'lab "$@"' _ install keep --at "$BATS_TEST_TMPDIR/keep"
+  peninsula install hall --at "$BATS_TEST_TMPDIR/hall"
+  assert_file_contains "$BATS_TEST_TMPDIR/hall/AGENTS.md" "The owner is **peninsula test**: the one human here"
+  run env GIT_CONFIG_COUNT=0 bash -c 'peninsula "$@"' _ install keep --at "$BATS_TEST_TMPDIR/keep"
   assert_failure
   assert_output_contains "the owner has no name: pass --owner '<name>', or set git config user.name"
   [ ! -e "$BATS_TEST_TMPDIR/keep/AGENTS.md" ]
@@ -134,11 +134,11 @@ Notes are encrypted at rest."
 }
 
 @test "a fresh lab, with a builder and a judge, asks the owner nothing, carries no key, and is healthy" {
-  require_lab_tasks install agent/add doctor
+  require_peninsula_tasks install agent/add doctor
   h="$BATS_TEST_TMPDIR/hearth"
-  lab install hearth --at "$h"
-  lab agent add vulcan --lab "$h" --role backend --owns server/ >/dev/null
-  lab agent add argus --lab "$h" --role review >/dev/null
+  peninsula install hearth --at "$h"
+  peninsula agent add vulcan --lab "$h" --role backend --owns server/ >/dev/null
+  peninsula agent add argus --lab "$h" --role review >/dev/null
   run grep -rl 'lab:decide' --exclude-dir=.git "$h"
   [ -z "$output" ]
   run grep -rlE '\{\{[A-Z_]+\}\}' --exclude-dir=.git "$h"
@@ -149,7 +149,7 @@ Notes are encrypted at rest."
     assert_file_contains "$h/.agents/notes/$agent.md" "## Stance"
     assert_file_says "$h/.agents/notes/$agent.md" "Narrowing this stance is $agent's; widening it is the owner's."
   done
-  run lab doctor --lab "$h"
+  run peninsula doctor --lab "$h"
   assert_success
   assert_output_contains "doctor: healthy"
   run in_lab "$h" test

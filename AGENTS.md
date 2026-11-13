@@ -1,6 +1,6 @@
-# lab
+# peninsula
 
-`lab` is a [shiv](https://github.com/KnickKnackLabs/shiv) package: a git
+`peninsula` is a [shiv](https://github.com/KnickKnackLabs/shiv) package: a git
 repo with a `mise.toml` and executable tasks in `.mise/tasks/`. Installed,
 it scaffolds and maintains **labs** — home bases for the agents of a
 project, with a contract, a roster, encrypted notes, a work queue and a
@@ -8,17 +8,17 @@ steward.
 
 This repository is the tool, not a lab: it has no `.agents/` of its own,
 no roster and no contract. The lab architecture lives in `scaffold/`,
-rendered into a new directory by `lab install`, which `git init`s it.
+rendered into a new directory by `peninsula install`, which `git init`s it.
 
 ## Layout
 
 - `.mise/tasks/` — the public command surface (`install`, `agent add`,
   `agent home`, `doctor`, `version`) plus dev tasks (`test`, `validate`,
   `suite` is `test`). Each task is a thin executable that sources
-  `lib/lab.sh`.
-- `lib/` — shared Bash. `lab.sh` holds the domain contract; keep tasks
+  `lib/peninsula.sh`.
+- `lib/` — shared Bash. `peninsula.sh` holds the domain contract; keep tasks
   command-shaped and put shared logic here.
-- `scaffold/` — the payload `lab install` writes: `scaffold/lab/` becomes
+- `scaffold/` — the payload `peninsula install` writes: `scaffold/lab/` becomes
   the lab's root, `scaffold/agent/` renders per-agent notes,
   `scaffold/work/` lands at the work-repo root.
 - `test/` — BATS. Tests call tasks through `mise run`, never raw scripts.
@@ -28,10 +28,10 @@ rendered into a new directory by `lab install`, which `git init`s it.
 ## The render contract
 
 `scaffold/` files are templates: `install` and `agent` substitute `{{KEY}}`
-placeholders via `render` in `lib/lab.sh`. Every placeholder is a fact the
+placeholders via `render` in `lib/peninsula.sh`. Every placeholder is a fact the
 tool computes; a scaffold may not ask the owner for one.
 
-Lab facts, rendered by `lab install`:
+Lab facts, rendered by `peninsula install`:
 
 - `{{LAB_NAME}}` — the lab's name, lowercase
 - `{{LAB_UPPER}}` — the name uppercased, for env var prefixes
@@ -43,7 +43,7 @@ Lab facts, rendered by `lab install`:
 - `{{OWNER}}` — the owner's name as it appears in the contract
 - `{{AUTHOR_DOMAIN}}` — the `<name>@<lab>.invalid` author label domain
 
-Agent facts, rendered by `lab agent add|home`:
+Agent facts, rendered by `peninsula agent add|home`:
 
 - `{{AGENT}}` — the agent's name
 - `{{ROLE}}` — what the agent is for, in two or three words
@@ -52,7 +52,7 @@ Agent facts, rendered by `lab agent add|home`:
 - `{{HOME_NOTE}}` — its canonical startup note
 - `{{SCRATCHPAD_NOTE}}` — its session-log note
 
-A new `{{KEY}}` is a new fact: compute it in `lib/lab.sh`, pass it through
+A new `{{KEY}}` is a new fact: compute it in `lib/peninsula.sh`, pass it through
 `agent_vars` or the `install` `VARS` array, and add it to this list. A key
 that can't be computed is a design smell — the tool decides, not the
 owner.

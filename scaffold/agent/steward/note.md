@@ -35,7 +35,7 @@ wakes. What it keeps true, in order:
   list, `.agents/notes/<name>.md`, `.agents/notes/<name>-home.md` — each roster
   agent has all four or the record says why not. A harness's agent definitions,
   where a harness is in use, are the owner's, written outside the lab,
-  and are checked only for still matching the roster. `lab doctor`
+  and are checked only for still matching the roster. `peninsula doctor`
   measures this where the framework is installed; `mise run test` in the
   lab is the fallback. A contract that describes a capability or a
   boundary that does not exist is the most expensive kind of stale, because

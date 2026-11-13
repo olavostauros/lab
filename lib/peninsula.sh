@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-LAB_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LAB_REPO_DIR="$(cd "$LAB_LIB_DIR/.." && pwd)"
-LAB_SCAFFOLD="$LAB_REPO_DIR/scaffold"
+PENINSULA_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PENINSULA_REPO_DIR="$(cd "$PENINSULA_LIB_DIR/.." && pwd)"
+PENINSULA_SCAFFOLD="$PENINSULA_REPO_DIR/scaffold"
 STEWARD=steward
 
 say() { printf '%s\n' "$*"; }
@@ -22,7 +22,7 @@ upper_env() {
 }
 
 caller_pwd() {
-  printf '%s' "${LAB_CALLER_PWD:-${CALLER_PWD:-$PWD}}"
+  printf '%s' "${PENINSULA_CALLER_PWD:-${CALLER_PWD:-$PWD}}"
 }
 
 resolve_path() {
@@ -210,17 +210,17 @@ insert_before_marker() {
 }
 
 today() {
-  printf '%s\n' "${LAB_TODAY:-$(date +%Y-%m-%d)}"
+  printf '%s\n' "${PENINSULA_TODAY:-$(date +%Y-%m-%d)}"
 }
 
 framework_version() {
-  if [ -n "${LAB_FRAMEWORK_VERSION:-}" ]; then
-    printf '%s\n' "$LAB_FRAMEWORK_VERSION"
+  if [ -n "${PENINSULA_FRAMEWORK_VERSION:-}" ]; then
+    printf '%s\n' "$PENINSULA_FRAMEWORK_VERSION"
     return
   fi
-  if [ "$(git -C "$LAB_REPO_DIR" rev-parse --show-toplevel 2>/dev/null)" = "$(cd "$LAB_REPO_DIR" && pwd -P)" ]; then
-    git -C "$LAB_REPO_DIR" describe --tags --exact-match HEAD 2>/dev/null \
-      || git -C "$LAB_REPO_DIR" rev-parse --short HEAD 2>/dev/null \
+  if [ "$(git -C "$PENINSULA_REPO_DIR" rev-parse --show-toplevel 2>/dev/null)" = "$(cd "$PENINSULA_REPO_DIR" && pwd -P)" ]; then
+    git -C "$PENINSULA_REPO_DIR" describe --tags --exact-match HEAD 2>/dev/null \
+      || git -C "$PENINSULA_REPO_DIR" rev-parse --short HEAD 2>/dev/null \
       && return
   fi
   printf 'unknown\n'
@@ -230,7 +230,7 @@ lab_framework_version() {
   [ -f "$1/README.md" ] || return 0
   local version
   version="$(tr '\n' ' ' < "$1/README.md" \
-    | grep -oE 'Started from \[lab\]\([^)]*\) on [0-9-]+, at [^ ]+\.' \
+    | grep -oE 'Started from \[(lab|peninsula)\]\([^)]*\) on [0-9-]+, at [^ ]+\.' \
     | sed 's/.*, at //; s/\.$//' | head -1)" || version=""
   printf '%s\n' "$version"
 }
@@ -288,13 +288,13 @@ ensure_home() {
   if [ -e "$home_note" ]; then
     say "keep: .agents/notes/$name-home.md already exists"
   else
-    render "$LAB_SCAFFOLD/agent/$kind/home.md" "$home_note" "$@"
+    render "$PENINSULA_SCAFFOLD/agent/$kind/home.md" "$home_note" "$@"
     say "create: .agents/notes/$name-home.md"
   fi
   if [ -e "$scratchpad" ]; then
     say "keep: .agents/notes/$name-scratchpad.md already exists"
   else
-    render "$LAB_SCAFFOLD/agent/scratchpad.md" "$scratchpad" "$@"
+    render "$PENINSULA_SCAFFOLD/agent/scratchpad.md" "$scratchpad" "$@"
     say "create: .agents/notes/$name-scratchpad.md"
   fi
 }
@@ -307,7 +307,7 @@ add_agent() {
   kind="$(agent_kind "$name" "$owns")"
   if [ "$kind" = steward ] && [ -n "$owns" ]; then die "the steward owns no directory; drop --owns"; fi
   if roster_has "$lab" "$name"; then
-    die "$name is already on the roster of $(display_path "$lab"); missing home notes are made with 'lab agent home $name'"
+    die "$name is already on the roster of $(display_path "$lab"); missing home notes are made with 'peninsula agent home $name'"
   fi
   if [ "$kind" = steward ] && roster_has_kind "$lab" steward; then
     die "$(display_path "$lab") already has a steward; a lab has exactly one"
@@ -335,7 +335,7 @@ add_agent() {
   roster_append "$lab" "$name" "$role" "$owns" "$kind"
   say "roster: $name ($kind)"
 
-  render "$LAB_SCAFFOLD/agent/$kind/note.md" "$lab/.agents/notes/$name.md" "${vars[@]}"
+  render "$PENINSULA_SCAFFOLD/agent/$kind/note.md" "$lab/.agents/notes/$name.md" "${vars[@]}"
   say "create: .agents/notes/$name.md"
 
   if grep -qxF "<!-- lab:roster -->" "$lab/AGENTS.md" \
@@ -354,7 +354,7 @@ add_agent() {
 lineage_names() {
   local own name
   own=" $(lab_name "$1") $(lab_project "$1" | tr '[:upper:]' '[:lower:]') "
-  awk '$1 == "lab" { print $2 }' "$LAB_LIB_DIR/lineage-names" |
+  awk '$1 == "lab" { print $2 }' "$PENINSULA_LIB_DIR/lineage-names" |
   while IFS= read -r name; do
     case "$own" in *" $name "*) ;; *) printf '%s\n' "$name" ;; esac
   done
@@ -412,41 +412,41 @@ is_truthy() {
   esac
 }
 
-# LAB_YES/MISE_YES answer every confirmation yes — the convention notes'
+# PENINSULA_YES/MISE_YES answer every confirmation yes — the convention notes'
 # confirm_destructive set. Guided choices (which name, which kind) still ask.
-lab_yes() {
-  is_truthy "${LAB_YES:-}" || is_truthy "${MISE_YES:-}"
+peninsula_yes() {
+  is_truthy "${PENINSULA_YES:-}" || is_truthy "${MISE_YES:-}"
 }
 
-# Answers come from $LAB_PROMPT_TTY when set, else /dev/tty when one opens,
+# Answers come from $PENINSULA_PROMPT_TTY when set, else /dev/tty when one opens,
 # else stdin — a pipe drives the same prompts without a terminal. The caller
 # opens the fd once with ask_open; subshells share its file offset, so every
 # ask reads the next line. gum renders only when the source is a real terminal.
 ask_open() {
-  [ -n "${LAB_ASK_FD:-}" ] && return 0
+  [ -n "${PENINSULA_ASK_FD:-}" ] && return 0
   [ "${BASHPID:-$$}" = "$$" ] || return 1  # a subshell's fd would die with it — the caller must open first
-  LAB_ASK_TTY=""
-  LAB_ASK_SRC=""
-  if [ -n "${LAB_PROMPT_TTY:-}" ]; then
-    { exec {LAB_ASK_FD}<"$LAB_PROMPT_TTY"; } 2>/dev/null || return 1
-    if [ -c "$LAB_PROMPT_TTY" ]; then
-      LAB_ASK_TTY=1
-      LAB_ASK_SRC="$LAB_PROMPT_TTY"
+  PENINSULA_ASK_TTY=""
+  PENINSULA_ASK_SRC=""
+  if [ -n "${PENINSULA_PROMPT_TTY:-}" ]; then
+    { exec {PENINSULA_ASK_FD}<"$PENINSULA_PROMPT_TTY"; } 2>/dev/null || return 1
+    if [ -c "$PENINSULA_PROMPT_TTY" ]; then
+      PENINSULA_ASK_TTY=1
+      PENINSULA_ASK_SRC="$PENINSULA_PROMPT_TTY"
     fi
-  elif { exec {LAB_ASK_FD}</dev/tty; } 2>/dev/null; then
-    LAB_ASK_TTY=1
-    LAB_ASK_SRC=/dev/tty
+  elif { exec {PENINSULA_ASK_FD}</dev/tty; } 2>/dev/null; then
+    PENINSULA_ASK_TTY=1
+    PENINSULA_ASK_SRC=/dev/tty
   else
-    exec {LAB_ASK_FD}<&0
+    exec {PENINSULA_ASK_FD}<&0
   fi
 }
 
 ask_have_gum() {
-  [ -n "$LAB_ASK_TTY" ] && command -v gum >/dev/null 2>&1
+  [ -n "$PENINSULA_ASK_TTY" ] && command -v gum >/dev/null 2>&1
 }
 
 ask_read() {
-  IFS= read -r -u "$LAB_ASK_FD" "$1"
+  IFS= read -r -u "$PENINSULA_ASK_FD" "$1"
 }
 
 ask_input() {
@@ -455,7 +455,7 @@ ask_input() {
   if ask_have_gum; then
     # A terminal device intentionally carries prompt input and output.
     # shellcheck disable=SC2094
-    answer="$(gum input --prompt "$prompt " --placeholder "$default" <"$LAB_ASK_SRC" 2>"$LAB_ASK_SRC")" || return 1
+    answer="$(gum input --prompt "$prompt " --placeholder "$default" <"$PENINSULA_ASK_SRC" 2>"$PENINSULA_ASK_SRC")" || return 1
   else
     printf '%s%s: ' "$prompt" "${default:+ [$default]}" >&2
     ask_read answer || rc=$?
@@ -471,7 +471,7 @@ ask_choice() {
   if ask_have_gum; then
     # A terminal device intentionally carries prompt input and output.
     # shellcheck disable=SC2094
-    gum choose --header "$prompt" "$@" <"$LAB_ASK_SRC" 2>"$LAB_ASK_SRC"
+    gum choose --header "$prompt" "$@" <"$PENINSULA_ASK_SRC" 2>"$PENINSULA_ASK_SRC"
     return
   fi
   printf '%s\n' "$prompt" >&2
@@ -510,7 +510,7 @@ ask_confirm() {
     [ "$default" = n ] && go=false
     # A terminal device intentionally carries prompt input, output, and errors.
     # shellcheck disable=SC2094
-    gum confirm --default="$go" "$prompt" <"$LAB_ASK_SRC" >"$LAB_ASK_SRC" 2>"$LAB_ASK_SRC"
+    gum confirm --default="$go" "$prompt" <"$PENINSULA_ASK_SRC" >"$PENINSULA_ASK_SRC" 2>"$PENINSULA_ASK_SRC"
     return
   fi
   local hint='[y/N]'

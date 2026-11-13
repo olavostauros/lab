@@ -42,7 +42,7 @@ if [ "${BLOCK_CHECK:-}" = "$name" ] || [ "${ORPHAN_CHECK:-}" = "$name" ]; then
   wait
 fi
 if [ "${REPORT_FAILURE:-}" = "$name" ]; then
-  for directory in "$TMPDIR"/lab-validation.*; do
+  for directory in "$TMPDIR"/peninsula-validation.*; do
     mkdir "$directory/report.tsv.next"
   done
 fi

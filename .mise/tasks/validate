@@ -10,7 +10,7 @@ set -euo pipefail
 repo="${MISE_CONFIG_ROOT:?mise must select the repository}"
 cd "$repo"
 umask 077
-log_dir=$(mktemp -d "${TMPDIR:-/tmp}/lab-validation.XXXXXX")
+log_dir=$(mktemp -d "${TMPDIR:-/tmp}/peninsula-validation.XXXXXX")
 started=$SECONDS
 failed=0
 lifecycle_error=0

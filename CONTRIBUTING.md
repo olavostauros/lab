@@ -14,7 +14,7 @@ request. Commit messages are conventional — `feat:`, `fix:`, `docs:`,
 ## Structure
 
 ```text
-lab/
+peninsula/
 ├── mise.toml              # Tools, settings, codebase lint config
 ├── README.tsx             # Source for generated README.md
 ├── README.md              # Generated; keep in sync with README.tsx
@@ -187,8 +187,8 @@ inherit a safety claim that this skeleton has not established.
 
 ## Releasing
 
-A tag is an install target, not a bookmark: bare `shiv install lab` takes
-the newest release tag, and `shiv update lab` on any machine advances to
+A tag is an install target, not a bookmark: bare `shiv install peninsula` takes
+the newest release tag, and `shiv update peninsula` on any machine advances to
 it. So:
 
 - tag on `main` only, once the gates are green there;
